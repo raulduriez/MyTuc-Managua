@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Firebase</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+</head>
+<body>
+    <h1>Conexión Firebase</h1>
+    <div id="status">Probando conexión...</div>
+    
+    <script>
+        // DATOS DE FIREBASE
+        const firebaseConfig = {
+  apiKey: "AIzaSyDGBkCnWppaprzs2gUkTj16nk6WOiLn5yQ",
+  authDomain: "bus-tracker-managua.firebaseapp.com",
+  databaseURL: "https://bus-tracker-managua-default-rtdb.firebaseio.com",
+  projectId: "bus-tracker-managua",
+  storageBucket: "bus-tracker-managua.firebasestorage.app",
+  messagingSenderId: "849562525776",
+  appId: "1:849562525776:web:83425f6567903f9b46b155",
+  measurementId: "G-P5FKLC1SN2"
+};
+        
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        
+        // Probar escritura
+        database.ref('test').set({
+            mensaje: 'Hola desde Bus Tracker',
+            fecha: new Date().toISOString()
+        }).then(() => {
+            document.getElementById('status').innerHTML = '✅ ¡Conexión exitosa! Datos guardados en Firebase';
+            document.getElementById('status').style.color = 'green';
+        }).catch((error) => {
+            document.getElementById('status').innerHTML = '❌ Error: ' + error.message;
+            document.getElementById('status').style.color = 'red';
+        });
+        
+        // Probar lectura
+        database.ref('test').on('value', (snapshot) => {
+            console.log('Datos leídos:', snapshot.val());
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCTN | MyTuc Managua</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --danger: #d93025;
+            --success: #1e8e3e;
+            --sidebar-bg: #ffffff;
+            --border: #dadce0;
+        }
+
+        /* --- ESTILOS DEL BLOQUEO DE ACCESO --- */
+        #access-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #f1f3f4;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 9999;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .access-card {
+            background: white; padding: 40px; border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center; border-top: 5px solid var(--primary);
+            width: 320px;
+        }
+        .access-card img { height: 70px; margin-bottom: 15px; }
+        .access-card input {
+            width: 100%; padding: 12px; margin: 20px 0;
+            border: 2px solid var(--border); border-radius: 8px;
+            font-size: 18px; text-align: center; outline: none;
+        }
+        .access-card input:focus { border-color: var(--primary); }
+        .btn-access {
+            background: var(--primary); color: white; border: none;
+            padding: 12px 30px; border-radius: 8px; cursor: pointer;
+            font-weight: bold; width: 100%; transition: 0.3s;
+        }
+        .btn-access:hover { background: #1557b0; }
+
+        /* --- TUS ESTILOS ORIGINALES (SIN CAMBIOS) --- */
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            grid-template-rows: 75px 1fr;
+            height: 100vh;
+            background: #f1f3f4;
+        }
+
+        header {
+            grid-column: 1 / -1;
+            background: #ffffff;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 25px;
+            justify-content: space-between;
+            z-index: 1001;
+        }
+
+        .logo-area { display: flex; align-items: center; gap: 15px; }
+        .logo-area img { 
+            height: 60px; 
+            width: auto;
+            object-fit: contain;
+        } 
+        
+        #clock { 
+            font-family: 'Courier New', monospace; 
+            font-size: 1.3rem; 
+            font-weight: bold; 
+            background: #e8f0fe; 
+            padding: 8px 20px; 
+            border-radius: 25px; 
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+
+        .sidebar { background: var(--sidebar-bg); border-right: 1px solid var(--border); overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+        
+        .card { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .card h3 { margin: 0 0 12px 0; font-size: 13px; text-transform: uppercase; color: #5f6368; border-bottom: 1px solid #f1f1f1; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+
+        .btn { width: 100%; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; margin-top: 10px; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-main { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+
+        .scroll-list { max-height: 180px; overflow-y: auto; font-size: 12px; }
+        .list-item { padding: 10px; border-bottom: 1px solid #f1f1f1; display: flex; justify-content: space-between; align-items: center; }
+        
+        .btn-clear { font-size: 11px; background: #fee; border: 1px solid var(--danger); padding: 4px 10px; border-radius: 6px; cursor: pointer; color: var(--danger); font-weight: bold; }
+        .btn-clear:hover { background: var(--danger); color: white; }
+
+        .btn-block { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 16px; padding: 5px; }
+
+        .tag { padding: 4px 10px; border-radius: 12px; font-size: 10px; color: white; font-weight: bold; cursor: pointer; text-align: center; min-width: 70px; }
+        #map { height: 100%; width: 100%; }
+    </style>
+</head>
+<body>
+
+    <!-- CAPA DE SEGURIDAD -->
+    <div id="access-overlay">
+        <div class="access-card">
+            <img src="img/Logo.jpeg" alt="Logo">
+            <h2 style="color:var(--primary); margin:0;">Acceso Restringido</h2>
+            <p style="color:#666; font-size: 14px;">Ingrese el código de seguridad para continuar.</p>
+            <input type="password" id="access-code" placeholder="CÓDIGO">
+            <button class="btn-access" onclick="checkAccess()">ENTRAR AL SISTEMA</button>
+        </div>
+    </div>
+
+    <header>
+        <div class="logo-area">
+            <img src="img/Logo.jpeg" alt="Logo MyTuc Managua">
+            <div>
+                <h2 style="margin:0; line-height:1; color: var(--primary); font-size: 22px;">MyTuc Managua</h2>
+                <small style="letter-spacing: 1px; color: #555;">SISTEMA NACIONAL DE CONTROL DE TRÁFICO</small>
+            </div>
+        </div>
+        <div id="clock">00:00:00</div>
+    </header>
+
+    <aside class="sidebar">
+        <div class="card">
+            <h3><i class="fas fa-microchip"></i> Estado del Sistema</h3>
+            <div style="display: flex; gap: 10px;">
+                <div style="flex:1; text-align:center; background:#f8f9fa; padding:10px; border-radius:8px; border-bottom: 3px solid var(--primary);">
+                    <small>Unidades</small><br><b id="countBuses" style="font-size:22px; color:var(--primary);">0</b>
+                </div>
+                <div style="flex:1; text-align:center; background:#f8f9fa; padding:10px; border-radius:8px; border-bottom: 3px solid var(--success);">
+                    <small>Cooperativas</small><br><b id="countEmpresas" style="font-size:22px; color:var(--success);">0</b>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3><i class="fas fa-bus-alt"></i> Cooperativas</h3>
+            <div id="listEmpresas" class="scroll-list"></div>
+            <button class="btn btn-main" onclick="nuevaEmpresa()"><i class="fas fa-plus"></i> Nueva Cooperativa</button>
+        </div>
+
+        <div class="card">
+            <h3><i class="fas fa-key"></i> Códigos de Unidades</h3>
+            <div id="listConductores" class="scroll-list"></div>
+            <button class="btn btn-success" onclick="registrarConductorAdmin()"><i class="fas fa-id-card"></i> Generar Código Unidad</button>
+        </div>
+
+        <div class="card" style="border-top: 4px solid var(--danger);">
+            <h3>
+                <span><i class="fas fa-comment-slash"></i> Reportes en Vivo</span>
+                <button class="btn-clear" onclick="limpiarChat()"><i class="fas fa-eraser"></i> Limpiar</button>
+            </h3>
+            <div id="listAlertas" class="scroll-list" style="max-height: 250px;"></div>
+        </div>
+
+        <div class="card">
+            <h3><i class="fas fa-user-lock"></i> Usuarios Bloqueados</h3>
+            <div id="listBlacklist" class="scroll-list"></div>
+        </div>
+    </aside>
+
+    <main><div id="map"></div></main>
+
+    <script>
+        // --- LÓGICA DE ACCESO (NUEVA) ---
+        function checkAccess() {
+            const code = document.getElementById('access-code').value;
+            // Códigos autorizados: 7070 y 2026
+            if (code === "7070" || code === "2026") {
+                document.getElementById('access-overlay').style.display = "none";
+            } else {
+                alert("Código Incorrecto. Acceso Denegado.");
+                document.getElementById('access-code').value = "";
+            }
+        }
+
+        // --- TU CÓDIGO ORIGINAL (SIN CAMBIOS) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDGBkCnWppaprzs2gUkTj16nk6WOiLn5yQ",
+            databaseURL: "https://bus-tracker-managua-default-rtdb.firebaseio.com"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        const map = L.map('map', { zoomControl: false }).setView([12.1328, -86.2504], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        let markersBuses = {};
+
+        db.ref('chat_comunidad').on('child_added', snap => {
+            const m = snap.val();
+            const box = document.getElementById('listAlertas');
+            const div = document.createElement('div');
+            div.className = "list-item";
+            div.style.borderLeft = "3px solid var(--danger)";
+            div.style.marginBottom = "5px";
+            const hora = m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--';
+            div.innerHTML = `
+                <div style="flex:1; padding-left: 8px;">
+                    <small><b>${m.telefono || 'Anónimo'}</b> • ${hora}</small>
+                    <div style="color:#444; font-size:13px; margin-top:3px;">${m.mensaje}</div>
+                </div>
+                <button class="btn-block" onclick="bloquearUsuario('${m.telefono}')" title="Bloquear"><i class="fas fa-user-slash"></i></button>`;
+            box.prepend(div);
+        });
+
+        db.ref('empresas').on('value', snap => {
+            const list = document.getElementById('listEmpresas');
+            list.innerHTML = "";
+            let count = 0;
+            snap.forEach(child => {
+                count++;
+                const e = child.val();
+                list.innerHTML += `
+                    <div class="list-item">
+                        <div><b>${child.key}</b><br><small>${e.nombre}</small></div>
+                        <span class="tag" style="background:${e.estado==='activo'?'#1e8e3e':'#d93025'}" 
+                              onclick="toggleEstado('empresas/${child.key}', '${e.estado}')">
+                            ${e.estado.toUpperCase()}
+                        </span>
+                    </div>`;
+            });
+            document.getElementById('countEmpresas').innerText = count;
+        });
+
+        db.ref('conductores_autorizados').on('value', snap => {
+            const list = document.getElementById('listConductores');
+            list.innerHTML = "";
+            snap.forEach(child => {
+                const c = child.val();
+                list.innerHTML += `
+                    <div class="list-item">
+                        <div><b>Unidad: ${c.unidad}</b><br><small>Código: ${child.key}</small></div>
+                        <span class="tag" style="background:${c.estado==='activo'?'#1e8e3e':'#d93025'}" 
+                              onclick="toggleEstado('conductores_autorizados/${child.key}', '${c.estado}')">
+                            ${c.estado === 'activo' ? 'ACTIVO' : 'BLOQUEO'}
+                        </span>
+                    </div>`;
+            });
+        });
+
+        function registrarConductorAdmin() {
+            const unidad = prompt("Número de Unidad/Bus:");
+            const empresa = prompt("Nombre de Cooperativa:");
+            if(!unidad || !empresa) return;
+            const cod = "EMP-" + Math.floor(1000 + Math.random() * 9000) + "-" + Math.floor(10000 + Math.random() * 90000);
+            db.ref('conductores_autorizados/' + cod).set({ unidad, empresa_nombre: empresa, estado: 'activo', creado: Date.now() });
+            alert("CÓDIGO GENERADO: " + cod + "\nEntregue este código al conductor.");
+        }
+
+        function nuevaEmpresa() {
+            const nom = prompt("Nombre de la nueva Cooperativa:");
+            const cod = "BUS-" + Math.floor(1000 + Math.random() * 9000);
+            if(nom) db.ref('empresas/' + cod).set({ nombre: nom, estado: 'activo' });
+        }
+
+        function bloquearUsuario(tel) {
+            if(!tel || tel === 'Anónimo') return;
+            if(confirm("¿Bloquear permanentemente al usuario "+tel+"?")) {
+                db.ref('blacklist/' + tel).set({ fecha: Date.now(), motivo: "Reporte de administrador" });
+            }
+        }
+
+        function limpiarChat() {
+            if(confirm("¿Está seguro? Esta acción SOLO borrará los mensajes de los usuarios, NO borrará cooperativas ni conductores.")) {
+                db.ref('chat_comunidad').set(null);
+                document.getElementById('listAlertas').innerHTML = "";
+                alert("Chat limpiado con éxito. Cooperativas protegidas.");
+            }
+        }
+
+        function toggleEstado(ruta, actual) {
+            db.ref(ruta).update({ estado: actual === 'activo' ? 'inactivo' : 'activo' });
+        }
+
+        db.ref('blacklist').on('value', snap => {
+            const list = document.getElementById('listBlacklist');
+            list.innerHTML = "";
+            snap.forEach(child => {
+                list.innerHTML += `<div class="list-item"><span><i class="fas fa-ban"></i> ${child.key}</span><button onclick="db.ref('blacklist/${child.key}').remove()" class="btn-clear" style="border:none; background:#eee;">Desbloquear</button></div>`;
+            });
+        });
+
+        db.ref('buses').on('value', snap => {
+            let activos = 0;
+            snap.forEach(child => {
+                const b = child.val();
+                if(b.estado === 'activo') {
+                    activos++;
+                    if(markersBuses[child.key]) markersBuses[child.key].setLatLng([b.lat, b.lng]);
+                    else markersBuses[child.key] = L.marker([b.lat, b.lng]).addTo(map).bindPopup("Unidad: " + child.key);
+                }
+            });
+            document.getElementById('countBuses').innerText = activos;
+        });
+
+        setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }, 1000);
+    </script>
+</body>
+</html>
