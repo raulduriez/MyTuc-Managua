@@ -2,17 +2,18 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <!-- El viewport correcto para que no se vea pequeño -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MyTuc Managua | Inicio</title>
     
-    <!-- 1. LLAMADA A BOOTSTRAP CSS (Estilos base) -->
+    <!-- LLAMADA A BOOTSTRAP CSS (Estilos base y responsivos) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
     <!-- Llamada a FontAwesome (Iconos) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
     <style>
-        /* Mantenemos tus colores y el fondo animado */
+        /* RESTAURAMOS TUS COLORES ORIGINALES */
         :root {
             --azul-oscuro: #000428;
             --azul-deep: #004e92;
@@ -20,39 +21,25 @@
             --verde-neon: #2ECC71;
         }
 
-      /*  body {
-            
-            background: radial-gradient(circle at center, var(--azul-deep), var(--azul-oscuro));
-            color: black;
-            font-family: 'Segoe UI', Roboto, sans-serif;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }*/
         body {
-            /* CAMBIO DE PRUEBA: Fondo verde lima chillante */
-            background: lime !important;
-            
-            /* CAMBIO: Texto negro */
-            color: black !important;
-            
-            /* Mantenemos lo demás */
+            /* Mantenemos el fondo gradiente azul original */
+            background: radial-gradient(circle at center, var(--azul-deep), var(--azul-oscuro)) !important;
+            color: white !important; /* Restauramos texto blanco */
             font-family: 'Segoe UI', Roboto, sans-serif;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            margin: 0;
-            padding: 0;
+            overflow-x: hidden; /* Evita movimiento horizontal en móvil */
         }
 
-        /* Fondo animado */
+        /* Fondo animado (lo mantenemos sutil) */
         .background-blobs {
             position: fixed; width: 100%; height: 100%; z-index: -1; filter: blur(80px); opacity: 0.5;
         }
         .blob { position: absolute; background: var(--celeste); border-radius: 50%; animation: move 20s infinite alternate; }
         @keyframes move { from { transform: translate(0, 0); } to { transform: translate(100px, 100px); } }
 
-        /* Estilos personalizados para tus elementos (adaptados a Bootstrap) */
+        /* Estilos personalizados adaptados a Bootstrap */
         header h1 {
             background: linear-gradient(to right, #fff, var(--celeste));
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
@@ -68,16 +55,18 @@
         }
 
         .logo-placeholder img {
-            width: 150px;
+            width: 150px; /* Tamaño del logo controlado */
             box-shadow: 0 0 30px var(--celeste);
         }
 
+        /* Estilos de botones personalizados */
         .menu-btn {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255,255,255,0.1);
             transition: all 0.4s ease;
             color: white; text-decoration: none;
+            cursor: pointer;
         }
         
         .menu-btn:hover {
@@ -87,11 +76,25 @@
             color: white;
         }
 
-        .menu-btn i { color: var(--celeste); transition: all 0.4s ease; }
+        .menu-btn i { color: var(--celeste); transition: all 0.4s ease; font-size: 2rem;}
         .menu-btn:hover i { color: var(--verde-neon); text-shadow: 0 0 15px var(--verde-neon); }
 
         footer { border-top: 1px solid rgba(255,255,255,0.1); }
         .u-name { color: var(--celeste); font-weight: bold; }
+
+        /* Ajuste específico para que los iconos y textos se vean grandes en móvil */
+        @media (max-width: 768px) {
+            .menu-btn {
+                padding: 20px !important; /* Más espacio para el dedo */
+            }
+            .menu-btn i {
+                font-size: 1.8rem; /* Icono grande en móvil */
+                margin-right: 15px !important;
+            }
+            .menu-btn div b {
+                font-size: 1.1rem; /* Texto principal grande */
+            }
+        }
     </style>
 </head>
 <body>
@@ -102,58 +105,60 @@
         <div class="blob" style="width: 200px; height: 200px; bottom: 10%; right: 10%; background: var(--verde-neon);"></div>
     </div>
 
-    <!-- 2. ESTRUCTURA PRINCIPAL DE BOOTSTRAP (Container) -->
+    <!-- CONTENEDOR PRINCIPAL DE BOOTSTRAP -->
     <div class="container py-4 flex-grow-1 d-flex flex-column justify-content-center">
         
         <header class="text-center text-md-start mb-5">
             <h1 class="display-5 fw-bold">My-Tuc Managua</h1>
         </header>
 
-        <!-- 3. LA REJILLA (Row y Cols) - Aquí está la magia responsiva -->
-        <main class="row align-items-center gx-5">
+        <!-- LA REJILLA RESPONSIVA (Row) -->
+        <main class="row align-items-center gx-md-5 gx-0">
             
-            <!-- Sección Logo: Ocupa 12 columnas en móvil (ancho total) y 6 en PC -->
-            <section class="col-12 col-md-6 mb-5 mb-md-0">
-                <div class="logo-section p-5 text-center">
+            <!-- Sección Logo: col-12 (Móvil Vertical) / col-md-6 (PC Horizontal) -->
+            <section class="col-12 col-md-6 mb-5 mb-md-0 text-center">
+                <div class="logo-section p-5 d-inline-block d-md-block">
                     <div class="logo-placeholder mb-4">
+                        <!-- class img-fluid asegura que el logo se adapte al ancho del móvil -->
                         <img src="img/Logo.jpeg" alt="LOGO" class="img-fluid rounded-4" onerror="this.parentElement.innerHTML='LOGO'">
                     </div>
-                    <span class="text-uppercase fw-bold celeste-text tracking-widest">Manada Digital</span>
+                    <span class="text-uppercase fw-bold celeste-text tracking-widest d-block small">Manada Digital</span>
                 </div>
             </section>
 
-            <!-- Sección Menú: Ocupa 12 columnas en móvil y 6 en PC -->
+            <!-- Sección Menú: col-12 (Móvil Vertical) / col-md-6 (PC Horizontal) -->
             <section class="col-12 col-md-6">
+                <!-- gap-3 asegura separación entre botones en vertical -->
                 <div class="d-grid gap-3">
-                    <a href="Usuari@s.html" class="menu-btn p-4 rounded-4 d-flex align-items-center">
-                        <i class="fas fa-users fa-2x me-4"></i>
+                    <a href="Usuari@s.html" class="menu-btn p-3 rounded-4 d-flex align-items-center">
+                        <i class="fas fa-users me-3"></i>
                         <div>
                             <b class="d-block text-uppercase">Usuarios / Pasajeros</b>
                             <span class="small opacity-75">Consulta rutas y radar en vivo</span>
                         </div>
                     </a>
 
-                    <a href="AdminMaestro.html" class="menu-btn p-4 rounded-4 d-flex align-items-center">
-                        <i class="fas fa-user-shield fa-2x me-4"></i>
+                    <a href="AdminMaestro.html" class="menu-btn p-3 rounded-4 d-flex align-items-center">
+                        <i class="fas fa-user-shield me-3"></i>
                         <div>
                             <b class="d-block text-uppercase">Admin Master</b>
-                            <span class="small opacity-75">Control total del sistema</span>
+                            <span class="small opacity-75small">Control total del sistema</span>
                         </div>
                     </a>
 
-                    <a href="EmpresaControl.html" class="menu-btn p-4 rounded-4 d-flex align-items-center">
-                        <i class="fas fa-building fa-2x me-4"></i>
+                    <a href="EmpresaControl.html" class="menu-btn p-3 rounded-4 d-flex align-items-center">
+                        <i class="fas fa-building me-3"></i>
                         <div>
                             <b class="d-block text-uppercase">Empresa Central</b>
-                            <span class="small opacity-75">Monitoreo de flota y logística</span>
+                            <span class="small opacity-75small">Monitoreo de flota y logística</span>
                         </div>
                     </a>
 
-                    <a href="conductor.html" class="menu-btn p-4 rounded-4 d-flex align-items-center">
-                        <i class="fas fa-bus fa-2x me-4"></i>
+                    <a href="conductor.html" class="menu-btn p-3 rounded-4 d-flex align-items-center">
+                        <i class="fas fa-bus me-3"></i>
                         <div>
                             <b class="d-block text-uppercase">Panel Conductor</b>
-                            <span class="small opacity-75">Transmisión GPS y ruta</span>
+                            <span class="small opacity-75small">Transmisión GPS y ruta</span>
                         </div>
                     </a>
                 </div>
@@ -162,11 +167,11 @@
     </div>
 
     <footer class="text-center p-4 mt-auto">
-        <p class="mb-1 small">Universidad Multidisciplinaria Nacional Ricardo Morales Avilés 2026</p>
+        <p class="mb-1 small">Universidad Multidisciplinaria Nacional Ricardo Morales Avilés</p>
         <p class="u-name small mb-0">Ingeniería en Sistemas y Computación</p>
     </footer>
 
-    <!-- 4. LLAMADA A BOOTSTRAP JS (Para componentes interactivos) -->
+    <!-- LLAMADA A BOOTSTRAP JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
