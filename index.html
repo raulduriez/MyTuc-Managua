@@ -174,53 +174,64 @@
 
         /* --- AJUSTES PARA CELULAR (VISTA VERTICAL) --- */
        /* --- SECCIÓN CORRECTIVA PARA MÓVILES --- */
-    @media screen and (max-width: 768px) {
-        
-        /* Forzamos a que el contenedor principal permita scroll y no se comprima */
-        .container {
-            display: block !important;
-            height: auto !important;
-            min-height: 100vh !important;
-            overflow-y: auto !important;
-        }
+    /* --- AJUSTES PARA CELULAR (VISTA VERTICAL) --- */
+@media screen and (max-width: 768px) {
 
-        /* Eliminamos el GRID y ponemos todo en una sola columna vertical */
-        .main-content { 
-            display: flex !important;
-            flex-direction: column !important;
-            grid-template-columns: 1fr !important; /* Anula las 2 columnas */
-            gap: 20px !important;
-            width: 100% !important;
-        }
-
-        /* El logo arriba, ocupando el ancho completo */
-        .logo-section { 
-            width: 100% !important;
-            height: auto !important; 
-            padding: 20px !important;
-            order: 1; /* Asegura que vaya de primero */
-        }
-
-        /* Los botones abajo, uno tras otro */
-        .menu-section {
-            width: 100% !important;
-            display: flex !important;
-            flex-direction: column !important;
-            gap: 15px !important;
-            order: 2; /* Asegura que vaya después del logo */
-        }
-
-        .menu-btn {
-            width: 100% !important;
-            padding: 20px !important;
-        }
-
-        /* Título centrado y más pequeño para que no empuje el diseño */
-        header h1 {
-            font-size: 1.6rem !important;
-            text-align: center !important;
-        }
+    .container {
+        display: block !important;
+        height: auto !important;
+        min-height: 100vh !important;
+        overflow-y: auto !important;
+        padding: 15px !important;
     }
+
+    .main-content { 
+        display: flex !important;
+        flex-direction: column !important;
+        grid-template-columns: 1fr !important; 
+        gap: 20px !important;
+        width: 100% !important;
+    }
+
+    .logo-section { 
+        width: 100% !important;
+        height: auto !important; 
+        padding: 20px !important;
+        order: 1;
+    }
+
+    .logo-placeholder {
+        width: 80% !important;
+        height: auto !important;
+        max-width: 200px !important;
+    }
+
+    .menu-section {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 15px !important;
+        order: 2;
+    }
+
+    .menu-btn {
+        width: 100% !important;
+        padding: 15px !important;
+        font-size: 0.95rem !important;
+    }
+
+    header h1 {
+        font-size: 1.6rem !important;
+        text-align: center !important;
+    }
+}
+
+/* Ajuste global para imágenes */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
     </style>
 </head>
 <body>
