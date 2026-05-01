@@ -170,32 +170,50 @@
 
     /* CAMBIO 5: Media Query optimizado para que no se vea pequeño en el celular */
     @media (max-width: 768px) {
-        header h1 {
-            font-size: 1.8rem;
-            text-align: center;
-        }
-
+        /* 1. Forzamos a que el contenido sea una sola columna */
         .main-content { 
-            grid-template-columns: 1fr; 
+            grid-template-columns: 1fr !important; 
+            display: flex !important;
+            flex-direction: column !important;
             gap: 20px;
+            justify-content: flex-start;
         }
 
+        /* 2. Ajustamos la sección del logo para que no sea tan alta */
         .logo-section { 
-            height: auto; 
-            padding: 30px;
+            width: 100%;
+            height: auto !important; 
+            padding: 20px;
+            box-sizing: border-box;
         }
 
         .logo-placeholder {
-            width: 180px;
-            height: 180px;
+            width: 150px;
+            height: 150px;
+        }
+
+        /* 3. Los botones ahora deben ocupar el 100% del ancho disponible */
+        .menu-section {
+            width: 100%;
+            gap: 12px;
         }
 
         .menu-btn {
             padding: 15px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
-        .menu-btn i {
+        /* 4. Reducimos el título para que no use tanto espacio */
+        header h1 {
             font-size: 1.5rem;
+            text-align: center;
+        }
+        
+        /* 5. Permitimos que el contenedor haga scroll si es necesario */
+        .container {
+            overflow-y: auto;
+            display: block; /* Cambiamos flex por block en móvil para el scroll */
         }
     }
 </style>
