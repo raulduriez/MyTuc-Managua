@@ -17,12 +17,10 @@
     body, html {
         margin: 0;
         padding: 0;
-        /* CAMBIO 1: min-height en lugar de height fijo para evitar que se comprima */
         min-height: 100%; 
         font-family: 'Segoe UI', Roboto, sans-serif;
         background: radial-gradient(circle at center, var(--azul-deep), var(--azul-oscuro));
         color: white;
-        /* CAMBIO 2: Permitir scroll vertical pero ocultar el horizontal */
         overflow-x: hidden; 
     }
 
@@ -50,7 +48,6 @@
     .container {
         display: flex;
         flex-direction: column;
-        /* CAMBIO 3: min-height permite que el contenedor crezca con el contenido */
         min-height: 100vh; 
         padding: 20px;
         box-sizing: border-box;
@@ -83,7 +80,6 @@
         backdrop-filter: blur(15px);
         border: 1px solid rgba(255,255,255,0.2);
         border-radius: 30px;
-        /* CAMBIO 4: Eliminamos height: 80% para que no se encoja en móviles */
         padding: 40px 20px;
         display: flex;
         flex-direction: column;
@@ -164,27 +160,31 @@
         padding: 20px;
         font-size: 0.9rem;
         border-top: 1px solid rgba(255,255,255,0.1);
+        margin-top: auto; /* Empuja el footer hacia abajo */
     }
 
     .u-name { color: var(--celeste); font-weight: bold; }
 
-    /* CAMBIO 5: Media Query optimizado para que no se vea pequeño en el celular */
+    /* --- SECCIÓN CORREGIDA PARA MÓVILES --- */
     @media (max-width: 768px) {
-        /* 1. Forzamos a que el contenido sea una sola columna */
+        
+        /* 1. Desactivamos el Grid de escritorio por completo */
         .main-content { 
-            grid-template-columns: 1fr !important; 
             display: flex !important;
             flex-direction: column !important;
-            gap: 20px;
-            justify-content: flex-start;
+            grid-template-columns: none !important;
+            gap: 30px;
+            padding: 10px 0;
+            align-items: stretch; /* Estira el contenido a lo ancho */
         }
 
-        /* 2. Ajustamos la sección del logo para que no sea tan alta */
+        /* 2. Ajustes del Logo para que se apile arriba */
         .logo-section { 
             width: 100%;
             height: auto !important; 
-            padding: 20px;
+            padding: 30px 15px;
             box-sizing: border-box;
+            border-radius: 20px;
         }
 
         .logo-placeholder {
@@ -192,28 +192,51 @@
             height: 150px;
         }
 
-        /* 3. Los botones ahora deben ocupar el 100% del ancho disponible */
+        .logo-section span {
+            font-size: 1rem;
+            letter-spacing: 3px;
+        }
+
+        /* 3. Ajustes del Menú para que se apile abajo y ocupe todo el ancho */
         .menu-section {
             width: 100%;
-            gap: 12px;
+            gap: 15px;
         }
 
         .menu-btn {
             padding: 15px;
             width: 100%;
             box-sizing: border-box;
+            border-radius: 15px;
         }
 
-        /* 4. Reducimos el título para que no use tanto espacio */
-        header h1 {
+        .menu-btn i {
             font-size: 1.5rem;
+            margin-right: 15px;
+        }
+
+        .menu-btn div b {
+            font-size: 1rem;
+        }
+
+        .menu-btn div span {
+            font-size: 0.8rem;
+        }
+
+        /* 4. Título más pequeño para móviles */
+        header h1 {
+            font-size: 1.8rem;
             text-align: center;
         }
         
-        /* 5. Permitimos que el contenedor haga scroll si es necesario */
+        header {
+            padding-bottom: 10px;
+        }
+
+        /* 5. Aseguramos el scroll vertical */
         .container {
             overflow-y: auto;
-            display: block; /* Cambiamos flex por block en móvil para el scroll */
+            display: block; /* Flex no funciona bien con scroll largo en móviles */
         }
     }
 </style>
@@ -276,7 +299,7 @@
         </main>
 
         <footer>
-            <p>Universidad Multidisciplinaria Ricardo Morales Avilés</p>
+            <p>Universidad Multidisciplinaria Nacional Ricardo Morales Avilés</p>
             <p class="u-name">Ingeniería en Sistemas y Computación</p>
         </footer>
     </div>
