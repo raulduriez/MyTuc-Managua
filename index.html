@@ -6,175 +6,199 @@
     <title>MyTuc Managua | Inicio</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        :root {
-            --azul-oscuro: #000428;
-            --azul-deep: #004e92;
-            --celeste: #00A8E8;
-            --verde-neon: #2ECC71;
-            --blanco-cristal: rgba(255, 255, 255, 0.1);
-        }
+    :root {
+        --azul-oscuro: #000428;
+        --azul-deep: #004e92;
+        --celeste: #00A8E8;
+        --verde-neon: #2ECC71;
+        --blanco-cristal: rgba(255, 255, 255, 0.1);
+    }
 
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            font-family: 'Segoe UI', Roboto, sans-serif;
-            background: radial-gradient(circle at center, var(--azul-deep), var(--azul-oscuro));
-            color: white;
-            overflow: hidden;
-        }
+    body, html {
+        margin: 0;
+        padding: 0;
+        /* CAMBIO 1: min-height en lugar de height fijo para evitar que se comprima */
+        min-height: 100%; 
+        font-family: 'Segoe UI', Roboto, sans-serif;
+        background: radial-gradient(circle at center, var(--azul-deep), var(--azul-oscuro));
+        color: white;
+        /* CAMBIO 2: Permitir scroll vertical pero ocultar el horizontal */
+        overflow-x: hidden; 
+    }
 
-        /* Fondo animado sutil */
-        .background-blobs {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            filter: blur(80px);
-            opacity: 0.5;
-        }
-        .blob {
-            position: absolute;
-            background: var(--celeste);
-            border-radius: 50%;
-            animation: move 20s infinite alternate;
-        }
+    .background-blobs {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        filter: blur(80px);
+        opacity: 0.5;
+    }
 
-        @keyframes move {
-            from { transform: translate(0, 0); }
-            to { transform: translate(100px, 100px); }
-        }
+    .blob {
+        position: absolute;
+        background: var(--celeste);
+        border-radius: 50%;
+        animation: move 20s infinite alternate;
+    }
 
-        .container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            padding: 20px;
-            box-sizing: border-box;
-        }
+    @keyframes move {
+        from { transform: translate(0, 0); }
+        to { transform: translate(100px, 100px); }
+    }
 
-        /* Encabezado según boceto */
-        header {
-            text-align: left;
-            padding-bottom: 20px;
-        }
+    .container {
+        display: flex;
+        flex-direction: column;
+        /* CAMBIO 3: min-height permite que el contenedor crezca con el contenido */
+        min-height: 100vh; 
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    header {
+        text-align: left;
+        padding-bottom: 20px;
+    }
+
+    header h1 {
+        font-size: 2.5rem;
+        margin: 0;
+        letter-spacing: 2px;
+        background: linear-gradient(to right, #fff, var(--celeste));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .main-content {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 40px;
+        flex-grow: 1;
+        align-items: center;
+    }
+
+    .logo-section {
+        background: var(--blanco-cristal);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 30px;
+        /* CAMBIO 4: Eliminamos height: 80% para que no se encoja en móviles */
+        padding: 40px 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 25px 45px rgba(0,0,0,0.5);
+        position: relative;
+    }
+
+    .logo-placeholder {
+        width: 250px;
+        height: 250px;
+        background: white;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--azul-oscuro);
+        font-weight: bold;
+        font-size: 2rem;
+        box-shadow: 0 0 30px var(--celeste);
+    }
+
+    .logo-section span {
+        margin-top: 20px;
+        font-size: 1.2rem;
+        color: var(--celeste);
+        text-transform: uppercase;
+        letter-spacing: 5px;
+    }
+
+    .menu-section {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .menu-btn {
+        background: var(--blanco-cristal);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.1);
+        padding: 25px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        color: white;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .menu-btn i {
+        font-size: 2rem;
+        margin-right: 20px;
+        color: var(--celeste);
+    }
+
+    .menu-btn div b {
+        display: block;
+        font-size: 1.1rem;
+        text-transform: uppercase;
+    }
+
+    .menu-btn div span {
+        font-size: 0.85rem;
+        opacity: 0.7;
+    }
+
+    .menu-btn:hover {
+        transform: scale(1.05) translateX(10px);
+        background: rgba(255,255,255,0.2);
+        border-color: var(--verde-neon);
+    }
+
+    footer {
+        text-align: center;
+        padding: 20px;
+        font-size: 0.9rem;
+        border-top: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .u-name { color: var(--celeste); font-weight: bold; }
+
+    /* CAMBIO 5: Media Query optimizado para que no se vea pequeño en el celular */
+    @media (max-width: 768px) {
         header h1 {
-            font-size: 2.5rem;
-            margin: 0;
-            letter-spacing: 2px;
-            background: linear-gradient(to right, #fff, var(--celeste));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-size: 1.8rem;
+            text-align: center;
         }
 
-        .main-content {
-            display: grid;
-            grid-template-columns: 1.2fr 1fr;
-            gap: 40px;
-            flex-grow: 1;
-            align-items: center;
-        }
-
-        /* Área del Logo (Izquierda) */
-        .logo-section {
-            background: var(--blanco-cristal);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 30px;
-            height: 80%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 25px 45px rgba(0,0,0,0.5);
-            position: relative;
-        }
-        .logo-placeholder {
-            width: 250px;
-            height: 250px;
-            background: white;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--azul-oscuro);
-            font-weight: bold;
-            font-size: 2rem;
-            box-shadow: 0 0 30px var(--celeste);
-        }
-        .logo-section span {
-            margin-top: 20px;
-            font-size: 1.2rem;
-            color: var(--celeste);
-            text-transform: uppercase;
-            letter-spacing: 5px;
-        }
-
-        /* Área de Botones (Derecha) */
-        .menu-section {
-            display: flex;
-            flex-direction: column;
+        .main-content { 
+            grid-template-columns: 1fr; 
             gap: 20px;
         }
 
+        .logo-section { 
+            height: auto; 
+            padding: 30px;
+        }
+
+        .logo-placeholder {
+            width: 180px;
+            height: 180px;
+        }
+
         .menu-btn {
-            background: var(--blanco-cristal);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.1);
-            padding: 25px;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            text-decoration: none;
-            color: white;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            position: relative;
-            overflow: hidden;
+            padding: 15px;
         }
 
         .menu-btn i {
-            font-size: 2rem;
-            margin-right: 20px;
-            color: var(--celeste);
+            font-size: 1.5rem;
         }
-
-        .menu-btn div b {
-            display: block;
-            font-size: 1.1rem;
-            text-transform: uppercase;
-        }
-
-        .menu-btn div span {
-            font-size: 0.85rem;
-            opacity: 0.7;
-        }
-
-        /* Efectos Hover */
-        .menu-btn:hover {
-            transform: scale(1.05) translateX(10px);
-            background: rgba(255,255,255,0.2);
-            border-color: var(--verde-neon);
-        }
-        .menu-btn:hover i {
-            color: var(--verde-neon);
-            text-shadow: 0 0 15px var(--verde-neon);
-        }
-
-        /* Footer según boceto */
-        footer {
-            text-align: center;
-            padding: 20px;
-            font-size: 0.9rem;
-            border-top: 1px solid rgba(255,255,255,0.1);
-        }
-        .u-name { color: var(--celeste); font-weight: bold; }
-
-        @media (max-width: 768px) {
-            .main-content { grid-template-columns: 1fr; }
-            .logo-section { height: 200px; }
-            .main-layout { overflow-y: auto; }
-        }
-    </style>
+    }
+</style>
 </head>
 <body>
 
