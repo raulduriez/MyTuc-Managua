@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyTuc | Acceso y Radar</title>
+    <title>MyTuc | Triangulación Radar</title>
     
     <!-- Librerías -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -121,7 +121,6 @@
             border: 2px solid var(--accent);
         }
 
-        /* Botones Mejora */
         .btn-control {
             flex: 1;
             padding: 12px;
@@ -205,15 +204,21 @@
             <div class="col-md-8">
                 <div id="mapa"></div>
                 
-                <!-- PANEL DE ARRIBO MEJORADO -->
+                <!-- PANEL DE ARRIBO TRIANGULADO -->
                 <div id="arriboPanel" class="arribo-panel shadow-lg mt-3" style="display:none;">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="fw-bold m-0 text-uppercase">Información de Arribo</h6>
-                        <span id="unidadBadge" class="badge bg-dark">--</span>
+                        <h6 class="fw-bold m-0 text-uppercase text-primary">Triangulación de Arribo</h6>
+                        <span id="unidadBadge" class="badge bg-dark">Esperando señal...</span>
                     </div>
                     <table class="table table-sm mb-0">
-                        <thead><tr class="small text-muted"><th>PUNTO</th><th>DISTANCIA</th><th>TIEMPO ESTIMADO</th></tr></thead>
-                        <tbody id="tablaBody" class="fw-bold"></tbody>
+                        <thead>
+                            <tr class="small text-muted text-center">
+                                <th>PUNTO REFERENCIA</th>
+                                <th>DISTANCIA</th>
+                                <th>TIEMPO ESTIMADO</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaBody" class="fw-bold text-center"></tbody>
                     </table>
                 </div>
             </div>
@@ -230,7 +235,6 @@
 
         let userMarker, busMarker, paradaMarker, linePB, miPos = null, paradaSeleccionada = null;
 
-        // Cargar Paradas
         if(window.json_edcion_paradas_Mang_1) {
             const list = document.getElementById('listaParadas');
             json_edcion_paradas_Mang_1.features.forEach(f => {
@@ -277,6 +281,10 @@
                 }
                 document.getElementById('arriboPanel').style.display = 'block';
                 actualizarMapa();
+                // Forzar actualización de tabla si hay buses
+                db.ref('buses').once('value', snap => {
+                    if(snap.val()) renderTabla(snap.val());
+                });
             }, null, { enableHighAccuracy: true });
         }
 
@@ -287,20 +295,23 @@
                 paradaSeleccionada = res;
                 document.getElementById('arriboPanel').style.display = 'block';
                 actualizarMapa();
+                db.ref('buses').once('value', snap => {
+                    if(snap.val()) renderTabla(snap.val());
+                });
             }
         }
 
-        // MONITOREO DE BUSES EN TIEMPO REAL
         db.ref('buses').on('value', snap => {
             const buses = snap.val();
             const indicator = document.getElementById('busStatus');
             if(buses && Object.keys(buses).length > 0) {
-                indicator.innerHTML = `<i class="fas fa-circle"></i> BUS ACTIVO EN RUTA`;
+                indicator.innerHTML = `<i class="fas fa-circle"></i> BUS EN LÍNEA`;
                 indicator.className = "status-indicator online";
-                if(paradaSeleccionada) renderTabla(buses);
+                if(paradaSeleccionada && miPos) renderTabla(buses);
             } else {
-                indicator.innerHTML = `<i class="fas fa-clock"></i> SIN BUSES EN LÍNEA`;
+                indicator.innerHTML = `<i class="fas fa-clock"></i> SIN BUSES ACTIVOS`;
                 indicator.className = "status-indicator offline";
+                document.getElementById('unidadBadge').innerText = "Sin señal de bus";
             }
         });
 
@@ -310,13 +321,31 @@
             const pLat = paradaSeleccionada.geometry.coordinates[1];
             const pLng = paradaSeleccionada.geometry.coordinates[0];
             
-            const dBP = calcularDist(bus.lat, bus.lng, pLat, pLng);
-            const dUP = calcularDist(miPos.lat, miPos.lng, pLat, pLng);
+            // Triangulación de distancias
+            const distBusAParada = calcularDist(bus.lat, bus.lng, pLat, pLng);
+            const distUsuarioAParada = calcularDist(miPos.lat, miPos.lng, pLat, pLng);
 
-            document.getElementById('unidadBadge').innerText = "UNIDAD: " + busId;
+            // Tiempos estimados (Basado en velocidad promedio 20km/h para bus y 5km/h para usuario)
+            const tiempoBus = Math.round(distBusAParada * 3); // ~3 min por km
+            const tiempoUser = Math.round(distUsuarioAParada * 12); // ~12 min por km
+
+            document.getElementById('unidadBadge').innerText = "Rastreando Unidad: " + busId;
             document.getElementById('tablaBody').innerHTML = `
-                <tr><td>MI POSICIÓN</td><td>${(dUP*1000).toFixed(0)}m</td><td class="text-primary">ESPERANDO</td></tr>
-                <tr class="table-info"><td>BUS PRÓXIMO</td><td>${(dBP*1000).toFixed(0)}m</td><td>${dBP < 0.4 ? 'LLEGANDO' : Math.round(dBP*3)+' min'}</td></tr>`;
+                <tr>
+                    <td class="text-start">📍 TU UBICACIÓN</td>
+                    <td>${(distUsuarioAParada*1000).toFixed(0)}m</td>
+                    <td class="text-info">${distUsuarioAParada < 0.05 ? 'EN PARADA' : tiempoUser + ' min'}</td>
+                </tr>
+                <tr class="table-info">
+                    <td class="text-start">🚌 BUS PRÓXIMO</td>
+                    <td>${(distBusAParada*1000).toFixed(0)}m</td>
+                    <td class="text-success">${distBusAParada < 0.3 ? 'LLEGANDO' : tiempoBus + ' min'}</td>
+                </tr>
+                <tr style="background: #f8f9fa; font-size: 0.8rem;">
+                    <td colspan="3" class="text-muted">
+                        <i class="fas fa-info-circle"></i> Bus a ${(calcularDist(bus.lat, bus.lng, miPos.lat, miPos.lng)*1000).toFixed(0)}m de ti
+                    </td>
+                </tr>`;
 
             if(busMarker) busMarker.setLatLng([bus.lat, bus.lng]);
             else busMarker = L.marker([bus.lat, bus.lng], {icon: L.divIcon({html: '<i class="fas fa-bus text-success fa-2x"></i>', className: 'bg-transparent'})}).addTo(map);
