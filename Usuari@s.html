@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyBus Managua - Triangulación Activa</title>
+    <title>My-Tuc Managua - Radar Activo</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
@@ -11,170 +11,175 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <style>
-        :root { --bg: #1a1a1a; --accent: #00e5ff; --text: #fff; }
-        body, html { margin: 0; padding: 0; height: 100%; font-family: sans-serif; overflow: hidden; }
-
-        /* Login con validación visual */
-        #login-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg); z-index: 9999; display: flex;
-            align-items: center; justify-content: center; color: var(--text);
-        }
-        .login-card {
-            background: #252525; padding: 30px; border-radius: 20px;
-            text-align: center; border: 1px solid var(--accent); width: 85%; max-width: 320px;
-        }
-        input {
-            width: 100%; padding: 15px; margin: 20px 0; border-radius: 10px;
-            border: none; background: #333; color: white; font-size: 1.5rem; text-align: center;
-        }
-        .btn {
-            background: var(--accent); color: #000; border: none; padding: 15px;
-            border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer;
+        :root {
+            --dark-blue: #0a192f;
+            --light-blue: #112240;
+            --accent: #00e5ff;
+            --text: #e6f1ff;
         }
 
-        /* Mapa y UI */
-        #map { height: 100vh; width: 100%; z-index: 1; }
-        .ui-panel {
-            position: absolute; z-index: 1000; background: rgba(26, 26, 26, 0.9);
-            color: var(--text); border-radius: 15px; border: 1px solid #444;
-        }
-        .top-status { top: 20px; left: 50%; transform: translateX(-50%); padding: 10px 20px; display: flex; gap: 15px; align-items: center; }
-        .bottom-metrics { bottom: 30px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 450px; display: grid; grid-template-columns: repeat(3, 1fr); padding: 15px; text-align: center; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; background: var(--dark-blue); color: var(--text); }
         
-        .val { display: block; font-weight: bold; color: var(--accent); font-size: 1.1rem; }
-        .lab { font-size: 0.7rem; opacity: 0.6; }
+        #map { height: 100vh; width: 100%; z-index: 1; filter: brightness(0.9) contrast(1.1); }
+
+        /* Estilo Interfaz My-Tuc */
+        .ui-overlay { position: absolute; z-index: 1000; pointer-events: auto; }
+        
+        .header {
+            top: 0; width: 100%; background: linear-gradient(to bottom, var(--dark-blue), transparent);
+            padding: 20px; display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .logo-mini { width: 50px; height: 50px; background: white; border-radius: 10px; padding: 5px; box-shadow: 0 0 15px var(--accent); }
+
+        /* Icono Sonar Orientable */
+        .sonar-icon {
+            width: 40px; height: 40px; background: rgba(0, 229, 255, 0.2);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            border: 2px solid var(--accent); transition: transform 0.3s ease;
+        }
+        .sonar-arrow {
+            width: 0; height: 0; border-left: 8px solid transparent;
+            border-right: 8px solid transparent; border-bottom: 15px solid var(--accent);
+            filter: drop-shadow(0 0 5px var(--accent));
+        }
+
+        /* Panel de Paradas Cercanas (100m) */
+        .near-stops-panel {
+            bottom: 100px; left: 10px; right: 10px; background: var(--light-blue);
+            border-radius: 15px; padding: 15px; border: 1px solid var(--accent);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* Buscador Inteligente */
+        .search-box {
+            bottom: 25px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 400px; display: flex; gap: 10px;
+        }
+        .search-input {
+            flex: 1; padding: 12px; border-radius: 25px; border: 1px solid var(--accent);
+            background: var(--dark-blue); color: white; outline: none;
+        }
+        .btn-round {
+            background: var(--accent); border: none; width: 45px; height: 45px;
+            border-radius: 50%; color: #000; cursor: pointer;
+        }
+
+        .stop-item { display: flex; justify-content: space-between; font-size: 0.9rem; padding: 5px 0; border-bottom: 1px solid #1d2d50; }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div id="login-screen">
-        <div class="login-card">
-            <i class="fas fa-location-crosshairs" style="font-size: 2.5rem; color: var(--accent);"></i>
-            <h2>Activar Rastreo</h2>
-            <p style="font-size: 0.8rem; opacity: 0.7;">Ingresa tu número para vincular el GPS</p>
-            <input type="tel" id="phone" placeholder="88888888" maxlength="8">
-            <button class="btn" onclick="requestGPSService()">CONECTAR GPS</button>
+    <div class="ui-overlay header">
+        <img src="https://raw.githubusercontent.com/alduriez/alduriez.github.io/main/logo.png" class="logo-mini" onerror="this.src='https://via.placeholder.com/50'">
+        <div style="text-align: right;">
+            <b style="color: var(--accent);">MY-TUC</b><br>
+            <small id="user-heading">Rumbo: --°</small>
         </div>
     </div>
 
-    <div id="app-ui" class="hidden">
-        <div class="ui-panel top-status">
-            <i class="fas fa-circle-dot" id="gps-indicator" style="color: #ff4444;"></i>
-            <b>RUTA 114</b>
+    <div id="map"></div>
+
+    <div class="ui-overlay near-stops-panel" id="proximity-panel">
+        <b style="color: var(--accent); font-size: 0.8rem;"><i class="fas fa-radar"></i> RADAR DE PARADAS (100M)</b>
+        <div id="stops-list" style="margin-top: 10px;">
+            <div class="stop-item"><span>Buscando paradas cercanas...</span></div>
         </div>
-        <div id="map"></div>
-        <div class="ui-panel bottom-metrics">
-            <div><span class="lab">TIEMPO</span><b class="val" id="m-time">-- min</b></div>
-            <div style="border-left: 1px solid #444; border-right: 1px solid #444;"><span class="lab">DISTANCIA</span><b class="val" id="m-dist">-- km</b></div>
-            <div><span class="lab">ESTADO</span><b class="val" id="m-status" style="font-size: 0.8rem;">ESPERANDO</b></div>
-        </div>
+    </div>
+
+    <div class="ui-overlay search-box">
+        <input type="text" id="ask-stop" class="search-input" placeholder="¿A qué parada quieres ir?">
+        <button class="btn-round" onclick="askAI()"><i class="fas fa-microphone"></i></button>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyDGBkCnWppaprzs2gUkTj16nk6WOiLn5yQ",
-            authDomain: "bus-tracker-managua.firebaseapp.com",
             databaseURL: "https://bus-tracker-managua-default-rtdb.firebaseio.com",
             projectId: "bus-tracker-managua"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let map, userMarker, busMarker, polyline, proximityCircle;
+        let map, userMarker, busMarker, triangulationLines = [];
+        const paradasNicaragua = [
+            { id: 3001, name: "Diesel Motors", lat: 12.1450, lng: -86.2300 },
+            { id: 3013, name: "Iglesia San José Obrero", lat: 12.1380, lng: -86.2450 },
+            { id: 3020, name: "Quinta Santa Martha", lat: 12.1320, lng: -86.2550 }
+        ];
 
-        // --- PROCESO DE UBICACIÓN ---
-        function requestGPSService() {
-            const phone = document.getElementById('phone').value;
-            if(phone.length !== 8) return alert("Número inválido");
-
-            // Solicitar permiso de ubicación explícitamente
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        // Permiso concedido
-                        document.getElementById('login-screen').classList.add('hidden');
-                        document.getElementById('app-ui').classList.remove('hidden');
-                        initApp(pos.coords.latitude, pos.coords.longitude);
-                    },
-                    (err) => {
-                        alert("Error: Debes activar el GPS en tu celular para usar MyBus.");
-                    },
-                    { enableHighAccuracy: true }
-                );
-            }
-        }
-
-        function initApp(lat, lng) {
-            // Mapa Claro para ver calles de Managua[cite: 5]
-            map = L.map('map').setView([lat, lng], 15);
+        function initMap() {
+            map = L.map('map', { zoomControl: false }).setView([12.1328, -86.2504], 15);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-            // Marcadores e Intermitencia
-            userMarker = L.marker([lat, lng], {
-                icon: L.divIcon({className: 'u', html: '<div style="background:#00e5ff; width:14px; height:14px; border-radius:50%; border:2px solid #fff; box-shadow: 0 0 10px #00e5ff;"></div>'})
+            // Icono de Usuario tipo Sonar con Dirección
+            const sonarHtml = `<div class="sonar-icon" id="sonar-pointer"><div class="sonar-arrow"></div></div>`;
+            userMarker = L.marker([12.1328, -86.2504], {
+                icon: L.divIcon({ className: 'custom-user', html: sonarHtml, iconSize: [40, 40] })
             }).addTo(map);
 
-            busMarker = L.marker([lat, lng], {
-                icon: L.divIcon({className: 'b', html: '<div style="background:#2196f3; color:#fff; padding:6px; border-radius:50%; border:2px solid #fff;"><i class="fas fa-bus"></i></div>'})
+            // Icono de Bus My-Tuc
+            busMarker = L.marker([12.1350, -86.2510], {
+                icon: L.divIcon({ className: 'b', html: '<div style="background:#f00; color:#fff; padding:8px; border-radius:5px; border:2px solid #fff;"><i class="fas fa-bus"></i></div>'})
             }).addTo(map);
-
-            // LA LÍNEA DE TRIANGULACIÓN (Intermitente)
-            polyline = L.polyline([], {
-                color: '#00e5ff',
-                weight: 2,
-                dashArray: '10, 10', // Efecto intermitente
-                opacity: 0.7
-            }).addTo(map);
-
-            proximityCircle = L.circle([lat, lng], {radius: 500, color: '#00e5ff', fillOpacity: 0.05, weight: 1}).addTo(map);
-
-            startLiveTracking();
         }
 
-        function startLiveTracking() {
-            // Rastrear Usuario en movimiento
-            navigator.geolocation.watchPosition(pos => {
-                const uLat = pos.coords.latitude;
-                const uLng = pos.coords.longitude;
-                userMarker.setLatLng([uLat, uLng]);
-                document.getElementById('gps-indicator').style.color = "#4caf50";
-                updateTriangulation();
-            }, null, { enableHighAccuracy: true });
-
-            // Rastrear Bus (Firebase)[cite: 6]
-            db.ref('bus_location/ruta_114').on('value', snap => {
-                const data = snap.val();
-                if(data) {
-                    busMarker.setLatLng([data.lat, data.lng]);
-                    proximityCircle.setLatLng([data.lat, data.lng]);
-                    updateTriangulation();
+        // Lógica de Orientación y Movimiento
+        if (window.DeviceOrientationEvent) {
+            window.addEventListener('deviceorientation', function(event) {
+                let heading = event.webkitCompassHeading || event.alpha;
+                if(heading) {
+                    const pointer = document.getElementById('sonar-pointer');
+                    if(pointer) pointer.style.transform = `rotate(${heading}deg)`;
+                    document.getElementById('user-heading').innerText = `Rumbo: ${Math.round(heading)}°`;
                 }
             });
         }
 
-        function updateTriangulation() {
+        function updateRadar() {
             const uPos = userMarker.getLatLng();
             const bPos = busMarker.getLatLng();
+            let nearestStop = null;
+            let minStopDist = Infinity;
+            
+            let html = "";
+            paradasNicaragua.forEach(p => {
+                const dist = map.distance(uPos, [p.lat, p.lng]);
+                if(dist <= 100) { // Radio de 100 metros
+                    html += `<div class="stop-item">
+                                <b>${p.name}</b>
+                                <span>${Math.round(dist)}m | ${Math.round(dist/1.2/60)} min</span>
+                             </div>`;
+                }
+                if(dist < minStopDist) { minStopDist = dist; nearestStop = p; }
+            });
 
-            // Actualizar Línea Intermitente[cite: 6]
-            polyline.setLatLngs([uPos, bPos]);
+            document.getElementById('stops-list').innerHTML = html || "Sin paradas a menos de 100m";
 
-            // Cálculos
-            const dist = map.distance(uPos, bPos);
-            document.getElementById('m-dist').innerText = (dist/1000).toFixed(2) + " km";
-            document.getElementById('m-time').innerText = Math.round((dist/1000)/20*60) + " min";
+            // Triangulación: Usuario -> Bus -> Parada más cercana
+            triangulationLines.forEach(l => map.removeLayer(l));
+            triangulationLines = [
+                L.polyline([uPos, bPos], {color: var(--accent), weight: 2, dashArray: '5, 10'}).addTo(map),
+                L.polyline([bPos, [nearestStop.lat, nearestStop.lng]], {color: '#ff0000', weight: 1, dashArray: '2, 5'}).addTo(map)
+            ];
+        }
 
-            if(dist <= 500) {
-                document.getElementById('m-status').innerText = "CERCA";
-                document.getElementById('m-status').style.color = "#00e5ff";
+        // Buscador por "Pregunta"
+        function askAI() {
+            const query = document.getElementById('ask-stop').value.toLowerCase();
+            const found = paradasNicaragua.find(p => p.name.toLowerCase().includes(query));
+            if(found) {
+                map.flyTo([found.lat, found.lng], 17);
+                L.popup().setLatLng([found.lat, found.lng]).setContent(`<b>${found.name}</b><br>Ruta en camino`).openOn(map);
             } else {
-                document.getElementById('m-status').innerText = "EN RUTA";
-                document.getElementById('m-status').style.color = "#00e5ff";
+                alert("No encuentro esa parada, intenta con otro nombre.");
             }
         }
+
+        initMap();
+        setInterval(updateRadar, 3000); // Actualiza cada 3 segundos
     </script>
 </body>
 </html>
