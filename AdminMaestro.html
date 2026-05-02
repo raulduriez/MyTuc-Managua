@@ -102,9 +102,12 @@
             if(!unidad || !empresa) return;
             const cod = "EMP-" + Math.floor(1000 + Math.random()*9000);
             
-            // URL CORREGIDA PARA TU GITHUB
-            const urlBase = "https://raulduriez.github.io/MyTuc-Managua/conductor.html";
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(urlBase + "?id=" + cod)}`;
+            // Lógica dinámica para detectar la URL de GitHub Pages
+            const urlActual = window.location.href; 
+            const urlCarpeta = urlActual.substring(0, urlActual.lastIndexOf('/'));
+            const urlFinalConductor = urlCarpeta + "/conductor.html?id=" + cod;
+
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(urlFinalConductor)}`;
 
             db.ref('conductores_autorizados/' + cod).set({ unidad, empresa_nombre: empresa, estado: 'validada', qr: qrUrl });
             window.open(qrUrl, '_blank');
