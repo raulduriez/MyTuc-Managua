@@ -2,238 +2,194 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>My-Tuc Managua - Radar Rojo</title>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyBus - Sistema de Gestión de Paradas</title>
+
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
+    <!-- Leaflet Search CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-search@3.0.2/dist/leaflet-search.min.css" />
+    
     <style>
-        :root {
-            --dark-blue: #041221;
-            --accent-red: #ff3b3b;
-            --cyan: #00e5ff;
-            --text: #e6f1ff;
+        /* Estilo Original (Claro y Profesional) */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7f6;
+            color: #333;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
         }
 
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; background: var(--dark-blue); color: var(--text); overflow: hidden; }
-
-        /* Pantalla de Acceso - Logo Grande */
-        #login-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at center, #0a192f 0%, #041221 100%);
-            z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        #map {
+            height: 100vh;
+            width: 100%;
+            z-index: 1;
         }
 
-        .main-logo-big {
-            background: white; padding: 25px; border-radius: 30px;
-            box-shadow: 0 0 50px rgba(0, 229, 255, 0.2); margin-bottom: 30px;
-            width: 220px; height: 220px; display: flex; align-items: center; justify-content: center;
-            transition: transform 0.3s ease;
+        /* Panel Lateral */
+        .sidebar {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            width: 320px;
+            border: 1px solid #ddd;
         }
 
-        .main-logo-big img { width: 100%; height: auto; }
-
-        .input-group { width: 80%; max-width: 320px; text-align: center; }
-        
-        input[type="tel"] {
-            width: 100%; padding: 18px; border-radius: 15px; border: 1px solid var(--cyan);
-            background: rgba(255,255,255,0.05); color: white; font-size: 1.4rem;
-            text-align: center; margin-bottom: 20px; outline: none;
+        /* Logo MyBus */
+        .logo-container {
+            text-align: center;
+            margin-bottom: 20px;
         }
 
-        .btn-main {
-            background: var(--cyan); color: #000; border: none; padding: 18px;
-            border-radius: 15px; width: 100%; font-weight: bold; cursor: pointer;
-            font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px;
+        .logo-container img {
+            max-width: 180px;
+            height: auto;
         }
 
-        /* Mapa y Marcador Rojo */
-        #map { height: 100vh; width: 100%; z-index: 1; visibility: hidden; }
-        
-        .sonar-red {
-            width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;
-        }
-        .sonar-wave {
-            position: absolute; width: 100%; height: 100%;
-            border: 3px solid var(--accent-red); border-radius: 50%;
-            animation: pulse-red 2s infinite;
-        }
-        .sonar-arrow {
-            width: 0; height: 0; border-left: 10px solid transparent;
-            border-right: 10px solid transparent; border-bottom: 22px solid var(--accent-red);
-            filter: drop-shadow(0 0 8px var(--accent-red));
+        h2 {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 8px;
+            text-align: center;
         }
 
-        @keyframes pulse-red {
-            0% { transform: scale(0.5); opacity: 1; }
-            100% { transform: scale(1.8); opacity: 0; }
+        .filter-group {
+            margin-bottom: 15px;
         }
 
-        /* Radar Inferior y Autocompletado */
-        .radar-box {
-            position: absolute; bottom: 20px; left: 5%; width: 90%;
-            background: rgba(10, 25, 47, 0.98); border: 1px solid var(--cyan);
-            border-radius: 20px; padding: 20px; z-index: 2000;
+        label {
+            display: block;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
         }
 
-        .search-results {
-            background: #112240; border-radius: 10px; margin-bottom: 10px;
-            max-height: 120px; overflow-y: auto;
+        select, input {
+            width: 100%;
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #ccc;
+            color: #333;
+            border-radius: 6px;
+            box-sizing: border-box;
         }
 
-        .result-item { padding: 10px; border-bottom: 1px solid #1a3055; cursor: pointer; font-size: 0.9rem; }
-
-        .hidden { display: none !important; }
+        /* Ajuste del buscador Leaflet para que combine */
+        .leaflet-control-search {
+            box-shadow: 0 1px 5px rgba(0,0,0,0.2) !important;
+            border-radius: 5px !important;
+        }
     </style>
 </head>
 <body>
 
-    <div id="login-screen">
-        <div class="main-logo-big">
-            <img src="img/logo2.jpeg" alt="Logo My-Tuc">
+    <div class="sidebar">
+        <!-- Contenedor del Logo -->
+        <div class="logo-container">
+            <!-- Reemplaza 'logo_mybus.png' con la ruta real de tu imagen -->
+            <img src="logo_mybus.png" alt="MyBus Logo">
         </div>
-        <div class="input-group">
-            <input type="tel" id="user-phone" placeholder="Celular (8 dígitos)" maxlength="8">
-            <button class="btn-main" onclick="initAccess()">INGRESAR A MY-TUC</button>
-            <p style="font-size: 0.7rem; opacity: 0.5; margin-top: 15px;">MANADA DIGITAL - NICARAGUA</p>
+
+        <h2>Buscador de Paradas</h2>
+        
+        <!-- El buscador de Leaflet aparecerá aquí mediante JS o como control -->
+        <div class="filter-group">
+            <label>Filtrar por Punto de Control</label>
+            <select id="select-control">
+                <option value="all">Ver todas las paradas</option>
+                <option value="01">Punto de Control 01</option>
+                <option value="02">Punto de Control 02</option>
+            </select>
         </div>
     </div>
 
     <div id="map"></div>
 
-    <div id="ui-radar" class="radar-box hidden">
-        <div id="suggestions" class="search-results hidden"></div>
-        
-        <div style="display: flex; gap: 10px; align-items: center;">
-            <div style="flex: 1; position: relative;">
-                <input type="text" id="stop-finder" oninput="handleSearch(this.value)" 
-                       placeholder="Buscar parada (Ej: Diesel, Zumen...)" 
-                       style="width: 100%; background: #041221; border: 1px solid var(--cyan); color: white; border-radius: 10px; padding: 12px; box-sizing: border-box;">
-            </div>
-            <i class="fas fa-microphone" style="color: var(--cyan); font-size: 1.2rem;"></i>
-        </div>
-
-        <div id="nearby-status" style="margin-top: 15px; font-size: 0.85rem; display: flex; justify-content: space-between;">
-            <span><i class="fas fa-bus" style="color: var(--accent-red);"></i> Bus: <b id="bus-eta">-- min</b></span>
-            <span><i class="fas fa-walking"></i> Parada: <b id="stop-dist">-- m</b></span>
-        </div>
-    </div>
-
+    <!-- Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-search@3.0.2/dist/leaflet-search.min.js"></script>
+    
+    <!-- Archivo de datos cargado previamente -->
+    <!-- <script src="PUNTOS_MANAGUA_01052026_1.js"></script> -->
+
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyDGBkCnWppaprzs2gUkTj16nk6WOiLn5yQ",
-            databaseURL: "https://bus-tracker-managua-default-rtdb.firebaseio.com",
-            projectId: "bus-tracker-managua"
+        // Inicializar Mapa
+        var map = L.map('map').setView([12.1328, -86.2504], 13);
+
+        // Capa base estándar (OpenStreetMap) - Estilo anterior
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
+
+        // Datos de ejemplo (usa tu variable PUNTOS_MANAGUA_01052026_1)
+        var paradasData = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": { "name": "Parada Central", "NUM_PARADA": "P-001", "PTO_CONTRO": "01" },
+                    "geometry": { "type": "Point", "coordinates": [-86.2504, 12.1328] }
+                },
+                {
+                    "type": "Feature",
+                    "properties": { "name": "Plaza Inter", "NUM_PARADA": "P-002", "PTO_CONTRO": "02" },
+                    "geometry": { "type": "Point", "coordinates": [-86.2704, 12.1428] }
+                }
+            ]
         };
-        firebase.initializeApp(firebaseConfig);
-        const rtdb = firebase.database();
 
-        let map, userMarker, busMarker, tLines = [];
-        const paradas = [
-            { n: "Diesel Motors", lat: 12.1450, lng: -86.2300 },
-            { n: "Iglesia San José Obrero", lat: 12.1380, lng: -86.2450 },
-            { n: "Quinta Santa Martha", lat: 12.1320, lng: -86.2550 },
-            { n: "Zumen Sur", lat: 12.1250, lng: -86.2880 },
-            { n: "Semáforos de la Subasta", lat: 12.1480, lng: -86.2100 }
-        ];
-
-        function initAccess() {
-            const ph = document.getElementById('user-phone').value;
-            if(ph.length === 8) {
-                // Pedir GPS[cite: 5]
-                navigator.geolocation.getCurrentPosition(p => {
-                    document.getElementById('login-screen').classList.add('hidden');
-                    document.getElementById('map').style.visibility = 'visible';
-                    document.getElementById('ui-radar').classList.remove('hidden');
-                    setupApp(p.coords.latitude, p.coords.longitude);
-                }, () => alert("Error: Se requiere GPS activo."), {enableHighAccuracy: true});
-            } else {
-                alert("Ingresa un número válido.");
+        // Estilo de los puntos
+        var stopsLayer = L.geoJSON(paradasData, {
+            onEachFeature: function (feature, layer) {
+                layer.bindPopup("<b>" + feature.properties.name + "</b><br>ID: " + feature.properties.NUM_PARADA);
+            },
+            pointToLayer: function (feature, latlng) {
+                return L.circleMarker(latlng, {
+                    radius: 9,
+                    fillColor: "#3498db", // Azul estándar MyBus
+                    color: "#fff",
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.9
+                });
             }
-        }
+        }).addTo(map);
 
-        function setupApp(la, lo) {
-            map = L.map('map', { zoomControl: false }).setView([la, lo], 15);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        // Configuración del buscador
+        var searchControl = new L.Control.Search({
+            layer: stopsLayer,
+            propertyName: 'name',
+            initial: false,
+            zoom: 16,
+            marker: false,
+            textPlaceholder: 'Buscar parada...'
+        });
 
-            // Marcador Sonar Rojo[cite: 5]
-            const redSonar = L.divIcon({
-                className: 'rs',
-                html: `<div class="sonar-red"><div class="sonar-wave"></div><div class="sonar-arrow" id="dir"></div></div>`,
-                iconSize: [50, 50]
-            });
+        searchControl.on('search:locationfound', function(e) {
+            e.layer.openPopup();
+        });
 
-            userMarker = L.marker([la, lo], { icon: redSonar }).addTo(map);
-            busMarker = L.marker([12.1350, -86.2510], {
-                icon: L.divIcon({ html: '<div style="background:#ff3b3b; color:white; padding:6px; border-radius:8px; border:2px solid #fff;"><i class="fas fa-bus"></i></div>'})
-            }).addTo(map);
+        map.addControl(searchControl);
 
-            // Brújula[cite: 5]
-            window.addEventListener('deviceorientationabsolute', e => {
-                let c = e.webkitCompassHeading || e.alpha;
-                if(c && document.getElementById('dir')) document.getElementById('dir').style.transform = `rotate(${c}deg)`;
-            }, true);
-
-            // Firebase Loop
-            rtdb.ref('bus_location/ruta_114').on('value', s => {
-                const d = s.val();
-                if(d) {
-                    busMarker.setLatLng([d.lat, d.lng]);
-                    processTriangulation();
+        // Filtrado dinámico
+        document.getElementById('select-control').addEventListener('change', function(e) {
+            var val = e.target.value;
+            stopsLayer.eachLayer(function(layer) {
+                if (val === "all" || layer.feature.properties.PTO_CONTRO === val) {
+                    map.addLayer(layer);
+                } else {
+                    map.removeLayer(layer);
                 }
             });
-
-            setInterval(processTriangulation, 3000);
-        }
-
-        // Buscador Inteligente (Case Insensitive + Partial)[cite: 1, 3]
-        function handleSearch(val) {
-            const sug = document.getElementById('suggestions');
-            if(val.length < 2) { sug.classList.add('hidden'); return; }
-
-            const matches = paradas.filter(p => p.n.toLowerCase().includes(val.toLowerCase()));
-            
-            if(matches.length > 0) {
-                sug.innerHTML = matches.map(m => `<div class="result-item" onclick="goToStop(${m.lat}, ${m.lng}, '${m.n}')">${m.n}</div>`).join('');
-                sug.classList.remove('hidden');
-            } else {
-                sug.classList.add('hidden');
-            }
-        }
-
-        function goToStop(la, lo, name) {
-            map.flyTo([la, lo], 17);
-            document.getElementById('suggestions').classList.add('hidden');
-            document.getElementById('stop-finder').value = name;
-        }
-
-        function processTriangulation() {
-            const u = userMarker.getLatLng();
-            const b = busMarker.getLatLng();
-            
-            // Buscar parada más cercana
-            let closest = paradas[0];
-            let minD = Infinity;
-            paradas.forEach(p => {
-                const d = map.distance(u, [p.lat, p.lng]);
-                if(d < minD) { minD = d; closest = p; }
-            });
-
-            document.getElementById('stop-dist').innerText = Math.round(minD) + " m";
-            const bDist = map.distance(u, b);
-            document.getElementById('bus-eta').innerText = Math.round((bDist/1000)/20*60) + " min";
-
-            // Dibujar Triangulación
-            tLines.forEach(l => map.removeLayer(l));
-            tLines = [
-                L.polyline([u, b], {color: '#00e5ff', dashArray: '8, 12', weight: 2}).addTo(map),
-                L.polyline([b, [closest.lat, closest.lng]], {color: '#ff3b3b', dashArray: '3, 6', weight: 1}).addTo(map)
-            ];
-        }
+        });
     </script>
 </body>
 </html>
