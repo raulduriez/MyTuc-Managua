@@ -202,7 +202,10 @@
             else alert("Acceso denegado");
         }
 
-        function openView(id) { document.getElementById(id).style.display = "grid"; if(id === 'view-stats') setTimeout(() => map.invalidateSize(), 400); }
+        function openView(id) { 
+            document.getElementById(id).style.display = "grid"; 
+            if(id === 'view-stats') setTimeout(() => map.invalidateSize(), 400); 
+        }
         function closeView(id) { document.getElementById(id).style.display = "none"; }
 
         const map = L.map('map', { zoomControl: false }).setView([12.1328, -86.2504], 13);
@@ -222,6 +225,7 @@
             const busesLive = snap.val() || {};
             detalleBox.innerHTML = ""; 
 
+            // Limpieza de marcadores inactivos
             for (let id in markersBuses) {
                 if (!busesLive[id]) {
                     map.removeLayer(markersBuses[id]);
@@ -233,14 +237,15 @@
                 const b = child.val();
                 activos++;
                 
+                // Cálculo de estado de conexión GPS[cite: 1]
                 const tiempoMsg = b.timestamp || b.ultima_actualizacion;
                 const min = (Date.now() - tiempoMsg) / 60000;
-                let colorStatus = "#1e8e3e"; // Verde
-                if(min > 2) colorStatus = "#f39c12"; // Naranja
-                if(min > 5) colorStatus = "#d93025"; // Rojo
+                let colorStatus = "--success"; // Verde
+                if(min > 2) colorStatus = "--warning"; // Naranja
+                if(min > 5) colorStatus = "--danger"; // Rojo
 
                 detalleBox.innerHTML += `
-                    <div style="padding: 10px; border-bottom: 1px solid #d1d9e6; border-left: 5px solid ${colorStatus}">
+                    <div style="padding: 10px; border-bottom: 1px solid #d1d9e6; border-left: 5px solid var(${colorStatus})">
                         <b style="color:var(--primary)">Unidad: ${child.key}</b><br>
                         <small><i class="fas fa-signal"></i> ${min < 1 ? 'En línea' : 'Hace ' + Math.floor(min) + ' min'}</small>
                     </div>`;
@@ -336,7 +341,7 @@
             
             const idUnidad = "BUS-" + Math.floor(1000 + Math.random() * 9000);
             
-            // Construcción de URL robusta basada en la ubicación actual del archivo
+            // Construcción de URL basada en la ubicación actual del archivo
             const urlActual = window.location.href;
             const rutaBase = urlActual.substring(0, urlActual.lastIndexOf('/'));
             const urlFinalConductor = `${rutaBase}/conductor.html?id=${idUnidad}`;
