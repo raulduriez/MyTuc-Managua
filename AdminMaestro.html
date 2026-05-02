@@ -22,7 +22,7 @@
 
         body, html {
             margin: 0; padding: 0; height: 100%;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             background: radial-gradient(circle at center, #003366 0%, #001122 100%);
             color: white; overflow: hidden;
         }
@@ -62,7 +62,7 @@
 
         .menu-btn {
             background: var(--glass); border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 15px; padding: 20px; display: flex; align-items: center;
+            border-radius: 15px; padding: 25px; display: flex; align-items: center;
             gap: 20px; cursor: pointer; transition: 0.3s; text-align: left; color: white;
         }
         .menu-btn:hover { background: rgba(255,255,255,0.2); transform: translateX(10px); border-color: var(--primary); }
@@ -70,7 +70,7 @@
         .menu-btn div h3 { margin: 0; font-size: 18px; text-transform: uppercase; }
         .menu-btn div p { margin: 5px 0 0; font-size: 13px; opacity: 0.7; }
 
-        /* --- VISTAS DETALLADAS (MODALES) --- */
+        /* --- VISTAS DETALLADAS --- */
         .view-layer {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #001122; z-index: 500; display: none;
@@ -103,7 +103,6 @@
 </head>
 <body>
 
-    <!-- ACCESO SEGURIDAD -->
     <div id="access-overlay">
         <div class="access-card">
             <img src="img/Logo.jpeg" style="width: 100px; border-radius: 10px; margin-bottom: 20px;">
@@ -113,7 +112,6 @@
         </div>
     </div>
 
-    <!-- PORTAL PRINCIPAL -->
     <div id="main-portal">
         <div class="portal-header">My-Tuc Managua</div>
         
@@ -128,7 +126,7 @@
                     <i class="fas fa-chart-line"></i>
                     <div>
                         <h3>Control del Mapa y Estadísticas</h3>
-                        <p>Radar en vivo, paradas y tráfico de usuarios</p>
+                        <p>Radar en vivo y monitor de unidades activas</p>
                     </div>
                 </div>
 
@@ -136,67 +134,49 @@
                     <i class="fas fa-file-signature"></i>
                     <div>
                         <h3>Registros de Cooperativas</h3>
-                        <p>Gestión de empresas y unidades autorizadas</p>
-                    </div>
-                </div>
-
-                <div class="menu-btn" style="opacity: 0.5; cursor: not-allowed;">
-                    <i class="fas fa-user-shield"></i>
-                    <div>
-                        <h3>Panel Conductor</h3>
-                        <p>Acceso restringido para transportistas</p>
+                        <p>Gestión de empresas y generación de códigos QR</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- VISTA 1: MAPA Y ESTADÍSTICAS -->
     <div id="view-stats" class="view-layer">
         <button class="close-view" onclick="closeView('view-stats')">SALIR X</button>
         <aside class="sidebar">
             <h2 style="color:var(--primary)">Centro Estadístico</h2>
             
             <div class="card">
-                <h3>Monitor de Red</h3>
+                <h3>Monitor de Unidades</h3>
                 <div class="stat-grid">
-                    <div class="stat-item"><small>Unidades Activas</small><br><b id="countBuses">0</b></div>
-                    <div class="stat-item"><small>Consultas Hoy</small><br><b>1,240</b></div>
+                    <div class="stat-item"><small>En Línea</small><br><b id="countBuses">0</b></div>
+                    <div class="stat-item"><small>Estado</small><br><b style="font-size:12px; color:var(--success)">Sincronizado</b></div>
                 </div>
             </div>
 
             <div class="card">
-                <h3>Interacción Usuarios (Chat)</h3>
+                <h3>Reportes de Usuarios</h3>
                 <div id="listAlertas" class="scroll-list"></div>
                 <button class="btn-action" style="background:#eee; color:#333" onclick="limpiarChat()">Limpiar Chat</button>
-            </div>
-
-            <div class="card">
-                <h3>Tipo de Consultas</h3>
-                <small>📍 Búsqueda de Ruta: 65%</small><br>
-                <small>🛰️ Rastreo en vivo: 35%</small>
             </div>
         </aside>
         <div id="map"></div>
     </div>
 
-    <!-- VISTA 2: REGISTROS -->
     <div id="view-registros" class="view-layer" style="grid-template-columns: 1fr;">
         <button class="close-view" onclick="closeView('view-registros')">VOLVER AL MENÚ</button>
         <div style="background: white; color: #333; padding: 60px; overflow-y: auto;">
             <h1 style="border-bottom: 3px solid var(--primary); padding-bottom: 10px;">Gestión de Registros</h1>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-                <!-- Columna Cooperativas -->
                 <div class="card">
-                    <h2 style="font-size: 18px;"><i class="fas fa-building"></i> Cooperativas / Empresas</h2>
+                    <h2 style="font-size: 18px;"><i class="fas fa-building"></i> Cooperativas</h2>
                     <div id="listEmpresas" style="max-height: 400px; overflow-y: auto; border: 1px solid #eee;"></div>
                     <button class="btn-action" style="background:var(--primary)" onclick="nuevaEmpresa()">+ Nueva Cooperativa</button>
                 </div>
 
-                <!-- Columna Unidades -->
                 <div class="card">
-                    <h2 style="font-size: 18px;"><i class="fas fa-bus"></i> Registro de Unidades (QR)</h2>
+                    <h2 style="font-size: 18px;"><i class="fas fa-bus"></i> Unidades Autorizadas</h2>
                     <div id="listConductores" style="max-height: 400px; overflow-y: auto; border: 1px solid #eee;"></div>
                     <button class="btn-action" style="background:var(--success)" onclick="registrarConductorAdmin()">+ Generar QR Unidad</button>
                 </div>
@@ -218,26 +198,39 @@
         function openView(id) { document.getElementById(id).style.display = "grid"; if(id === 'view-stats') setTimeout(() => map.invalidateSize(), 400); }
         function closeView(id) { document.getElementById(id).style.display = "none"; }
 
-        /* --- LÓGICA DEL MAPA (TRASLADADA) --- */
         const map = L.map('map', { zoomControl: false }).setView([12.1328, -86.2504], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         const busIcon = L.divIcon({ html: '<i class="fas fa-bus" style="color:#1a73e8; font-size:20px;"></i>', className: 'b-icon', iconSize: [20, 20] });
         let markersBuses = {};
 
+        // Lógica de limpieza automática para buses fuera de servicio[cite: 1]
         db.ref('buses').on('value', snap => {
             let activos = 0;
+            const busesData = snap.val() || {};
+            
+            // Recorrer marcadores existentes para limpiar los que ya no están activos[cite: 1]
+            for (let id in markersBuses) {
+                if (!busesData[id] || busesData[id].estado !== 'activo') {
+                    map.removeLayer(markersBuses[id]);
+                    delete markersBuses[id];
+                }
+            }
+
+            // Actualizar o añadir buses activos[cite: 1]
             snap.forEach(child => {
                 const b = child.val();
                 if(b.estado === 'activo') {
                     activos++;
-                    if(markersBuses[child.key]) markersBuses[child.key].setLatLng([b.lat, b.lng]);
-                    else markersBuses[child.key] = L.marker([b.lat, b.lng], {icon: busIcon}).addTo(map).bindPopup("Unidad: " + child.key);
+                    if(markersBuses[child.key]) {
+                        markersBuses[child.key].setLatLng([b.lat, b.lng]);
+                    } else {
+                        markersBuses[child.key] = L.marker([b.lat, b.lng], {icon: busIcon}).addTo(map).bindPopup("Unidad: " + child.key);
+                    }
                 }
             });
             document.getElementById('countBuses').innerText = activos;
         });
 
-        /* --- LÓGICA DE REGISTROS (TRASLADADA) --- */
         function nuevaEmpresa() {
             const nom = prompt("Nombre Cooperativa:");
             if(nom) db.ref('empresas/' + Date.now()).set({ nombre: nom, estado: 'activo' });
@@ -296,7 +289,6 @@
             document.getElementById('listAlertas').prepend(div);
         });
         function limpiarChat() { if(confirm("¿Limpiar reportes?")) db.ref('chat_comunidad').set(null); }
-
     </script>
 </body>
 </html>
