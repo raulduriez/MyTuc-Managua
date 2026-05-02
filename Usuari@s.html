@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyBus - Sistema de Triangulación</title>
+    <title>MyBus - Triangulación Automática</title>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-search@3.0.2/dist/leaflet-search.min.css" />
@@ -19,81 +19,79 @@
 
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; height: 100vh; overflow: hidden; }
 
-        /* CUADRO DE DIALOGO INICIAL (REQUISITOS) */
+        /* MODAL INICIAL SEGÚN BOCETO */
         #modal-registro {
-            position: fixed; inset: 0; background: rgba(0,4,40,0.9);
+            position: fixed; inset: 0; background: rgba(0,4,40,0.95);
             display: flex; justify-content: center; align-items: center; z-index: 2000;
         }
         .form-registro {
             background: white; padding: 30px; border-radius: 15px; width: 350px; text-align: center;
-            border-top: 5px solid var(--celeste);
+            border-top: 8px solid var(--azul-deep);
         }
 
-        /* PANEL LATERAL DE CONTROL */
-        .sidebar { width: 350px; background: white; display: flex; flex-direction: column; border-right: 1px solid #ccc; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
+        /* SIDEBAR */
+        .sidebar { width: 360px; background: white; display: flex; flex-direction: column; border-right: 1px solid #ccc; }
         .sidebar-content { padding: 20px; flex: 1; overflow-y: auto; }
 
         .section-box { background: #f8f9fa; border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
-        h3 { font-size: 0.9rem; margin: 0 0 10px 0; color: var(--azul-oscuro); text-transform: uppercase; }
+        h3 { font-size: 0.85rem; margin: 0 0 10px 0; color: var(--azul-deep); text-transform: uppercase; letter-spacing: 1px; }
 
-        /* BOTONES */
-        .btn-main { width: 100%; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-bottom: 10px; transition: 0.3s; }
+        .btn-main { width: 100%; padding: 14px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; }
         .btn-auto { background: var(--azul-deep); color: white; }
-        .btn-auto:hover { background: var(--celeste); }
+        .btn-auto:active { background: var(--verde-neon); }
 
-        /* ICONOS PERSONALIZADOS */
+        /* ICONO DE PARADA CON NÚMERO */
         .stop-icon-label {
-            background: white; border: 2px solid var(--azul-deep); border-radius: 50%;
-            text-align: center; font-weight: bold; font-size: 10px; line-height: 20px; width: 20px; height: 20px;
+            background: var(--blanco-puro); border: 2px solid var(--azul-deep); border-radius: 50%;
+            text-align: center; font-weight: bold; font-size: 11px; line-height: 22px; width: 24px; height: 24px;
+            color: var(--azul-oscuro); box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
-        #map { flex: 1; }
+        #map { flex: 1; background: #e5e3df; }
 
-        /* FOOTER Y MENSAJES */
-        .info-bar { background: var(--azul-oscuro); color: white; padding: 10px; font-size: 0.8rem; display: flex; justify-content: space-between; }
-        .msg-interact { background: white; padding: 10px; border-top: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
+        .info-bar { background: var(--azul-oscuro); color: white; padding: 12px; font-size: 0.8rem; display: flex; justify-content: space-between; }
+        .msg-interact { background: white; padding: 12px; border-top: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
 <body>
 
-<!-- 1. CUADRO DE DIALOGO INICIAL -->
 <div id="modal-registro">
     <div class="form-registro">
-        <img src="img/logo2.jpeg" alt="Logo MyBus" style="width: 120px; margin-bottom: 15px;">
-        <h2>Bienvenido</h2>
-        <p>Ingresa tus datos para continuar</p>
-        <input type="tel" id="input-phone" placeholder="Número de Teléfono" style="width:100%; padding:10px; margin-bottom:15px;">
-        <button class="btn-main btn-auto" onclick="validarYActivar()">PERMITIR GPS Y ACTIVAR</button>
+        <img src="img/logo2.jpeg" alt="MyBus" style="width: 140px; margin-bottom: 20px;">
+        <h2 style="color: var(--azul-oscuro);">Registro de Usuario</h2>
+        <input type="tel" id="input-phone" placeholder="Número de Celular" style="width:100%; padding:12px; border:1px solid #ccc; border-radius:5px; margin-bottom:20px; font-size:1rem;">
+        <button class="btn-main btn-auto" onclick="validarYActivar()">AUTORIZAR GPS Y ENTRAR</button>
     </div>
 </div>
 
-<!-- 2. INTERFAZ PRINCIPAL -->
 <aside class="sidebar">
     <div class="sidebar-content">
         <div class="section-box">
-            <h3>Búsqueda Automática</h3>
-            <button class="btn-main btn-auto" onclick="activarTriangulacionAuto()">DETECTAR PARADA MÁS CERCANA</button>
+            <h3>Detección Automática</h3>
+            <button class="btn-main btn-auto" onclick="activarTriangulacionAuto()">UBICAR PARADA Y BUSES</button>
         </div>
 
         <div class="section-box">
-            <h3>Búsqueda Manual</h3>
-            <div id="search-container" style="border: 1px solid var(--celeste); border-radius: 4px;"></div>
-            <div id="manual-info" style="margin-top:10px; font-size:0.85rem;"></div>
+            <h3>Búsqueda de Parada (Escribir)</h3>
+            <div id="search-container"></div>
+            <div id="manual-info" style="margin-top:10px;"></div>
         </div>
 
-        <div class="section-box" style="background: #eef7ff;">
-            <h3>Buses Cercanos (Top 3)</h3>
-            <div id="top-buses">Esperando ubicación...</div>
+        <div class="section-box" style="border-left: 5px solid var(--verde-neon);">
+            <h3>Buses en Rango (1 KM)</h3>
+            <div id="top-buses">
+                <p style="color:#999; font-size:0.8rem;">Esperando triangulación...</p>
+            </div>
         </div>
     </div>
 
     <div class="info-bar">
-        <span>☁️ Clima: 29°C</span>
-        <span>⚠️ Sin Accidentes</span>
+        <span id="weather-display">🌤️ Managua: 31°C</span>
+        <span>🕒 Tiempo Real</span>
     </div>
     <div class="msg-interact">
-        <span style="color: var(--azul-deep); font-weight:bold;">Mensajes: Activo</span>
-        <a href="#" style="color: #25D366; font-weight:bold; text-decoration:none;">WhatsApp 💬</a>
+        <span style="color: var(--azul-deep); font-weight:bold;">Soporte Activo</span>
+        <a href="https://wa.me/50588888888" style="color: #25D366; font-weight:bold; text-decoration:none; display:flex; align-items:center; gap:5px;">WhatsApp 💬</a>
     </div>
 </aside>
 
@@ -101,29 +99,26 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-search@3.0.2/dist/leaflet-search.min.js"></script>
-
-<!-- Carga dinámica del archivo de paradas -->
 <script src="PUNTOS_MANAGUA_01052026_1.js"></script>
 
 <script>
-    var map = L.map('map').setView([12.1328, -86.2504], 14);
+    var map = L.map('map', {zoomControl: false}).setView([12.1328, -86.2504], 14);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-    var userMarker, busMarker, polyline;
+    var userMarker, triangulacionLine, paradasCercanasLayer;
     var userPos = null;
 
-    // Símbolo de Usuario (Forma Norte, Color Rojo)
-    var userIcon = L.divIcon({
-        className: 'user-north-icon',
-        html: '<div style="color:red; font-size:24px; transform: rotate(-45deg);">▲</div>',
-        iconSize: [20, 20]
+    // Icono Usuario: Flecha Roja (Norte)
+    var northIcon = L.divIcon({
+        className: 'user-icon-norte',
+        html: '<div style="color:red; font-size:30px; transform: rotate(-45deg); text-shadow: 2px 2px 2px rgba(0,0,0,0.3);">▲</div>',
+        iconSize: [30, 30]
     });
 
     function validarYActivar() {
-        let tel = document.getElementById('input-phone').value;
-        if(tel.length < 8) return alert("Ingrese un teléfono válido");
-        
-        document.getElementById('modal-registro').style.display = 'none';
+        if(document.getElementById('input-phone').value.length < 8) return alert("Ingrese un número válido");
+        document.getElementById('modal-registro').style.fadeOut = 300;
+        setTimeout(() => { document.getElementById('modal-registro').style.display = 'none'; }, 300);
         iniciarGPS();
     }
 
@@ -131,65 +126,77 @@
         navigator.geolocation.getCurrentPosition(pos => {
             userPos = [pos.coords.latitude, pos.coords.longitude];
             if(userMarker) map.removeLayer(userMarker);
-            userMarker = L.marker(userPos, {icon: userIcon}).addTo(map).bindPopup("Mi Ubicación (Norte)");
+            userMarker = L.marker(userPos, {icon: northIcon}).addTo(map);
             map.setView(userPos, 16);
-        });
+        }, () => alert("Error al obtener GPS"));
     }
 
-    // Dibujar Paradas con su número en círculo
+    // Dibujar paradas del JSON con número en círculo
     var stopsLayer = L.geoJSON(PUNTOS_MANAGUA_01052026_1, {
         pointToLayer: function(feature, latlng) {
-            let num = feature.properties.NUM_PARADA || "P";
             return L.marker(latlng, {
                 icon: L.divIcon({
                     className: 'stop-icon-label',
-                    html: `<div>${num}</div>`
+                    html: `<div>${feature.properties.NUM_PARADA || '?'}</div>`
                 })
             });
         }
     }).addTo(map);
 
-    // Buscador Manual (Para escribir parada)
-    var searchControl = new L.Control.Search({
+    // FUNCIÓN AUTOMÁTICA SOLICITADA
+    function activarTriangulacionAuto() {
+        if(!userPos) return alert("Primero activa el GPS");
+
+        let closestStop = null;
+        let minDistance = Infinity;
+
+        // Buscar en el archivo la parada más cercana
+        PUNTOS_MANAGUA_01052026_1.features.forEach(f => {
+            let stopLatLng = [f.geometry.coordinates[1], f.geometry.coordinates[0]];
+            let dist = map.distance(userPos, stopLatLng);
+            if(dist < minDistance) {
+                minDistance = dist;
+                closestStop = { latlng: stopLatLng, name: f.properties.name, dist: dist };
+            }
+        });
+
+        if(closestStop && closestStop.dist <= 1000) { // Solo si está a menos de 1km
+            ejecutarTriangulacionVisual(closestStop.latlng, closestStop.name, closestStop.dist);
+        } else {
+            document.getElementById('top-buses').innerHTML = "<p class='status-msg'>No hay paradas a menos de 1km.</p>";
+        }
+    }
+
+    function ejecutarTriangulacionVisual(targetLatlng, nombre, distancia) {
+        if(triangulacionLine) map.removeLayer(triangulacionLine);
+
+        // Línea descontinua Azul (Triangulación)
+        triangulacionLine = L.polyline([userPos, targetLatlng], {
+            color: '#004e92', weight: 3, dashArray: '10, 15', opacity: 0.7
+        }).addTo(map);
+
+        map.fitBounds(triangulacionLine.getBounds(), {padding: [50, 50]});
+
+        // Actualizar UI
+        document.getElementById('top-buses').innerHTML = `
+            <div style="font-weight:bold; color:var(--azul-oscuro); margin-bottom:5px;">📍 ${nombre}</div>
+            <p>Distancia: ${(distancia/1000).toFixed(2)} km</p>
+            <p>1. Bus 102 - 3 min</p>
+            <p>2. Bus 110 - 6 min</p>
+        `;
+    }
+
+    // Búsqueda Manual
+    new L.Control.Search({
         container: 'search-container',
         layer: stopsLayer,
         propertyName: 'name',
         marker: false,
         moveToLocation: function(latlng, title) {
-            triangular(latlng, title);
+            let d = map.distance(userPos, latlng);
+            ejecutarTriangulacionVisual([latlng.lat, latlng.lng], title, d);
         }
-    });
-    map.addControl(searchControl);
-
-    function triangular(targetLatlng, nombreParada) {
-        if(!userPos) return alert("Active su GPS primero");
-
-        // Limpiar líneas anteriores
-        if(polyline) map.removeLayer(polyline);
-
-        // Línea descontinua: Usuario -> Parada
-        polyline = L.polyline([userPos, targetLatlng], {
-            color: 'blue', dashArray: '10, 10', weight: 2
-        }).addTo(map);
-
-        let dist = (map.distance(userPos, targetLatlng) / 1000).toFixed(2);
-        document.getElementById('manual-info').innerHTML = `
-            <b>Parada:</b> ${nombreParada}<br>
-            <b>Distancia:</b> ${dist} km<br>
-            <b>Tiempo est.:</b> ${Math.round(dist * 12)} min
-        `;
-        map.fitBounds(polyline.getBounds());
-    }
-
-    function activarTriangulacionAuto() {
-        // Aquí buscaríamos la parada más cercana automáticamente
-        // y llenaríamos el cuadro de "Top 3 buses"
-        document.getElementById('top-buses').innerHTML = `
-            <p>1. Bus 102 - 4 min</p>
-            <p>2. Bus 110 - 7 min</p>
-            <p>3. Bus 120 - 12 min</p>
-        `;
-    }
+    }).addTo(map);
 </script>
 
 </body>
