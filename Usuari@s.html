@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyBus - Panel de Control</title>
+    <title>MyBus - Sistema de Triangulación</title>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-search@3.0.2/dist/leaflet-search.min.css" />
@@ -14,186 +14,180 @@
             --azul-deep: #004e92;
             --celeste: #00A8E8;
             --verde-neon: #2ECC71;
-            --blanco-puro: #ffffff;
-            --gris-claro: #f8f9fa;
+            --rojo-norte: #FF0000;
         }
 
-        body { 
-            margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; 
-            background: var(--gris-claro); display: flex; flex-direction: column; height: 100vh; 
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; height: 100vh; overflow: hidden; }
+
+        /* CUADRO DE DIALOGO INICIAL (REQUISITOS) */
+        #modal-registro {
+            position: fixed; inset: 0; background: rgba(0,4,40,0.9);
+            display: flex; justify-content: center; align-items: center; z-index: 2000;
+        }
+        .form-registro {
+            background: white; padding: 30px; border-radius: 15px; width: 350px; text-align: center;
+            border-top: 5px solid var(--celeste);
         }
 
-        /* HEADER SEGÚN BOCETO */
-        header { 
-            background: var(--azul-oscuro); color: white; padding: 10px 20px;
-            display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 3px solid var(--celeste);
+        /* PANEL LATERAL DE CONTROL */
+        .sidebar { width: 350px; background: white; display: flex; flex-direction: column; border-right: 1px solid #ccc; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
+        .sidebar-content { padding: 20px; flex: 1; overflow-y: auto; }
+
+        .section-box { background: #f8f9fa; border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        h3 { font-size: 0.9rem; margin: 0 0 10px 0; color: var(--azul-oscuro); text-transform: uppercase; }
+
+        /* BOTONES */
+        .btn-main { width: 100%; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-bottom: 10px; transition: 0.3s; }
+        .btn-auto { background: var(--azul-deep); color: white; }
+        .btn-auto:hover { background: var(--celeste); }
+
+        /* ICONOS PERSONALIZADOS */
+        .stop-icon-label {
+            background: white; border: 2px solid var(--azul-deep); border-radius: 50%;
+            text-align: center; font-weight: bold; font-size: 10px; line-height: 20px; width: 20px; height: 20px;
         }
 
-        .main-container { display: flex; flex: 1; overflow: hidden; }
+        #map { flex: 1; }
 
-        /* SIDEBAR IZQUIERDO */
-        .sidebar { 
-            width: 320px; background: var(--blanco-puro); border-right: 1px solid #ddd;
-            display: flex; flex-direction: column; padding: 15px; gap: 15px;
-        }
-
-        .btn-accion { 
-            background: var(--azul-deep); color: white; border: none; padding: 12px;
-            border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.9rem;
-        }
-
-        .btn-accion.activo { background: var(--verde-neon); color: var(--azul-oscuro); }
-
-        .search-box-container { 
-            border: 2px solid var(--celeste); padding: 5px; border-radius: 6px;
-        }
-
-        /* PANEL DE DATOS CERCANOS */
-        .datos-cerca { background: #eef7ff; padding: 10px; border-radius: 6px; border-left: 4px solid var(--celeste); }
-        .datos-cerca h4 { margin: 0 0 5px 0; font-size: 0.85rem; }
-
-        /* AREA CENTRAL: MAPA */
-        #map { flex: 1; position: relative; }
-
-        /* FOOTER DE INFORMACIÓN (CLIMA/ACCIDENTES) */
-        .info-footer { 
-            background: var(--azul-oscuro); color: white; padding: 10px 20px;
-            display: flex; justify-content: space-between; align-items: center;
-            font-size: 0.9rem;
-        }
-
-        /* BARRA INFERIOR DE MENSAJES Y WHATSAPP */
-        .bottom-bar { 
-            background: var(--blanco-puro); border-top: 1px solid #ddd; padding: 10px 20px;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-
-        .whatsapp-link { color: #25d366; font-weight: bold; text-decoration: none; display: flex; align-items: center; gap: 5px; }
-
-        /* Estilo para los inputs */
-        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        /* FOOTER Y MENSAJES */
+        .info-bar { background: var(--azul-oscuro); color: white; padding: 10px; font-size: 0.8rem; display: flex; justify-content: space-between; }
+        .msg-interact { background: white; padding: 10px; border-top: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
 <body>
 
-<header>
-    <img src="img/logo2.jpeg" alt="Logo" style="height: 40px; border-radius: 4px;">
-    <div>Usuario: <span id="display-phone">--------</span></div>
-</header>
-
-<div class="main-container">
-    <aside class="sidebar">
-        <!-- Bloque de Registro según boceto -->
-        <div id="registro-seccion">
-            <label>Número de teléfono</label>
-            <input type="tel" id="user-phone" placeholder="Ingresa tu número">
-            <button class="btn-accion" style="margin-top:10px; width:100%" onclick="activarUsuario()">GPS ACTIVAR</button>
-        </div>
-
-        <button class="btn-accion" id="btn-auto">Botón Activación Automática</button>
-        
-        <div class="search-box-container">
-            <label style="font-size: 0.75rem; font-weight: bold;">BUSCAR PARADA (ESCRIBIR)</label>
-            <div id="search-control-here"></div>
-        </div>
-
-        <!-- Lista de tiempos según boceto -->
-        <div class="datos-cerca">
-            <h4>DATOS CERCANOS</h4>
-            <div id="bus-list">
-                <p>BUS 1: -- MINUTOS</p>
-                <p>BUS 2: -- MINUTOS</p>
-                <p>PARADA: XXX</p>
-            </div>
-        </div>
-    </aside>
-
-    <main id="map"></main>
+<!-- 1. CUADRO DE DIALOGO INICIAL -->
+<div id="modal-registro">
+    <div class="form-registro">
+        <img src="img/logo2.jpeg" alt="Logo MyBus" style="width: 120px; margin-bottom: 15px;">
+        <h2>Bienvenido</h2>
+        <p>Ingresa tus datos para continuar</p>
+        <input type="tel" id="input-phone" placeholder="Número de Teléfono" style="width:100%; padding:10px; margin-bottom:15px;">
+        <button class="btn-main btn-auto" onclick="validarYActivar()">PERMITIR GPS Y ACTIVAR</button>
+    </div>
 </div>
 
-<!-- Sección de información adicional del boceto -->
-<div class="info-footer">
-    <div id="weather-info">🌤️ Cargando Clima... 28°C</div>
-    <div id="accident-info">⚠️ Sin accidentes en ruta</div>
-</div>
+<!-- 2. INTERFAZ PRINCIPAL -->
+<aside class="sidebar">
+    <div class="sidebar-content">
+        <div class="section-box">
+            <h3>Búsqueda Automática</h3>
+            <button class="btn-main btn-auto" onclick="activarTriangulacionAuto()">DETECTAR PARADA MÁS CERCANA</button>
+        </div>
 
-<div class="bottom-bar">
-    <div id="instant-msg" style="color: var(--azul-deep); font-weight: bold;">MENSAJES INSTANTÁNEOS: Bienvenidos a MyBus</div>
-    <a href="https://wa.me/505xxxxxxxx" class="whatsapp-link">
-        Contacto WhatsApp 💬
-    </a>
-</div>
+        <div class="section-box">
+            <h3>Búsqueda Manual</h3>
+            <div id="search-container" style="border: 1px solid var(--celeste); border-radius: 4px;"></div>
+            <div id="manual-info" style="margin-top:10px; font-size:0.85rem;"></div>
+        </div>
+
+        <div class="section-box" style="background: #eef7ff;">
+            <h3>Buses Cercanos (Top 3)</h3>
+            <div id="top-buses">Esperando ubicación...</div>
+        </div>
+    </div>
+
+    <div class="info-bar">
+        <span>☁️ Clima: 29°C</span>
+        <span>⚠️ Sin Accidentes</span>
+    </div>
+    <div class="msg-interact">
+        <span style="color: var(--azul-deep); font-weight:bold;">Mensajes: Activo</span>
+        <a href="#" style="color: #25D366; font-weight:bold; text-decoration:none;">WhatsApp 💬</a>
+    </div>
+</aside>
+
+<main id="map"></main>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-search@3.0.2/dist/leaflet-search.min.js"></script>
 
-<!-- Carga de tu base de datos de paradas de Managua -->
+<!-- Carga dinámica del archivo de paradas -->
 <script src="PUNTOS_MANAGUA_01052026_1.js"></script>
 
 <script>
     var map = L.map('map').setView([12.1328, -86.2504], 14);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-    var userMarker;
-    var paradasLayer;
+    var userMarker, busMarker, polyline;
+    var userPos = null;
 
-    // Función para activar el usuario según tu boceto
-    function activarUsuario() {
-        var phone = document.getElementById('user-phone').value;
-        if(phone.length < 8) {
-            alert("Por favor ingresa un número válido");
-            return;
-        }
-        document.getElementById('display-phone').innerText = phone;
-        obtenerUbicacionReal();
+    // Símbolo de Usuario (Forma Norte, Color Rojo)
+    var userIcon = L.divIcon({
+        className: 'user-north-icon',
+        html: '<div style="color:red; font-size:24px; transform: rotate(-45deg);">▲</div>',
+        iconSize: [20, 20]
+    });
+
+    function validarYActivar() {
+        let tel = document.getElementById('input-phone').value;
+        if(tel.length < 8) return alert("Ingrese un teléfono válido");
+        
+        document.getElementById('modal-registro').style.display = 'none';
+        iniciarGPS();
     }
 
-    function obtenerUbicacionReal() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(pos => {
-                const { latitude, longitude } = pos.coords;
-                if (userMarker) map.removeLayer(userMarker);
-                
-                // Icono azul para el usuario
-                userMarker = L.circleMarker([latitude, longitude], {
-                    radius: 10, color: '#004e92', fillColor: '#00A8E8', fillOpacity: 1
-                }).addTo(map).bindPopup("Tu Ubicación Actual").openPopup();
-                
-                map.setView([latitude, longitude], 16);
-                document.getElementById('btn-auto').classList.add('activo');
-                calcularTiemposSimulados();
+    function iniciarGPS() {
+        navigator.geolocation.getCurrentPosition(pos => {
+            userPos = [pos.coords.latitude, pos.coords.longitude];
+            if(userMarker) map.removeLayer(userMarker);
+            userMarker = L.marker(userPos, {icon: userIcon}).addTo(map).bindPopup("Mi Ubicación (Norte)");
+            map.setView(userPos, 16);
+        });
+    }
+
+    // Dibujar Paradas con su número en círculo
+    var stopsLayer = L.geoJSON(PUNTOS_MANAGUA_01052026_1, {
+        pointToLayer: function(feature, latlng) {
+            let num = feature.properties.NUM_PARADA || "P";
+            return L.marker(latlng, {
+                icon: L.divIcon({
+                    className: 'stop-icon-label',
+                    html: `<div>${num}</div>`
+                })
             });
-        }
-    }
-
-    // Capa de Paradas vinculada al buscador
-    paradasLayer = L.geoJSON(PUNTOS_MANAGUA_01052026_1, {
-        onEachFeature: function(feature, layer) {
-            layer.bindPopup("<b>Parada:</b> " + feature.properties.name);
         }
     }).addTo(map);
 
-    // Configuración del buscador para que dejes ESCRIBIR (como pediste en el boceto)
+    // Buscador Manual (Para escribir parada)
     var searchControl = new L.Control.Search({
-        container: 'search-control-here',
-        layer: paradasLayer,
+        container: 'search-container',
+        layer: stopsLayer,
         propertyName: 'name',
         marker: false,
-        textPlaceholder: 'Escribe el nombre...',
-        moveToLocation: function(latlng, title, map) {
-            map.setView(latlng, 17);
-            document.getElementById('instant-msg').innerText = "CONSULTANDO: " + title;
+        moveToLocation: function(latlng, title) {
+            triangular(latlng, title);
         }
     });
     map.addControl(searchControl);
 
-    function calcularTiemposSimulados() {
-        // Aquí conectaremos con tu Firebase en el siguiente paso para ver buses reales
-        document.getElementById('bus-list').innerHTML = `
-            <p style="color: var(--azul-deep); font-weight:bold;">BUS 1: 3 MINUTOS</p>
-            <p style="color: var(--azul-deep); font-weight:bold;">BUS 2: 8 MINUTOS</p>
-            <p>PARADA MÁS CERCANA: En rango (1km)</p>
+    function triangular(targetLatlng, nombreParada) {
+        if(!userPos) return alert("Active su GPS primero");
+
+        // Limpiar líneas anteriores
+        if(polyline) map.removeLayer(polyline);
+
+        // Línea descontinua: Usuario -> Parada
+        polyline = L.polyline([userPos, targetLatlng], {
+            color: 'blue', dashArray: '10, 10', weight: 2
+        }).addTo(map);
+
+        let dist = (map.distance(userPos, targetLatlng) / 1000).toFixed(2);
+        document.getElementById('manual-info').innerHTML = `
+            <b>Parada:</b> ${nombreParada}<br>
+            <b>Distancia:</b> ${dist} km<br>
+            <b>Tiempo est.:</b> ${Math.round(dist * 12)} min
+        `;
+        map.fitBounds(polyline.getBounds());
+    }
+
+    function activarTriangulacionAuto() {
+        // Aquí buscaríamos la parada más cercana automáticamente
+        // y llenaríamos el cuadro de "Top 3 buses"
+        document.getElementById('top-buses').innerHTML = `
+            <p>1. Bus 102 - 4 min</p>
+            <p>2. Bus 110 - 7 min</p>
+            <p>3. Bus 120 - 12 min</p>
         `;
     }
 </script>
