@@ -110,21 +110,21 @@
                     <i class="fas fa-chart-line"></i>
                     <div>
                         <h3>Centro de Control y Mapa</h3>
-                        <p>Radar en vivo, detalle de unidades y chat</p>
+                        <p>Radar en vivo, detalle de unidades y alertas</p>
                     </div>
                 </div>
                 <div class="menu-btn" onclick="openView('view-registros')">
                     <i class="fas fa-file-signature"></i>
                     <div>
                         <h3>Gestión de Registros</h3>
-                        <p>Cooperativas, unidades y reportes Excel</p>
+                        <p>Cooperativas, QR y Cierre de Día (Excel)</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- VISTA: ESTADÍSTICAS Y MAPA -->
+    <!-- VISTA: CENTRO DE CONTROL -->
     <div id="view-stats" class="view-layer">
         <button class="close-view" onclick="closeView('view-stats')">SALIR X</button>
         <aside class="sidebar">
@@ -137,11 +137,10 @@
                 </div>
             </div>
             
-            <!-- Detalle en Vivo de Unidades -->
             <div class="card">
                 <h3>Detalle de Unidades en Vivo</h3>
                 <div id="detalleActivos" class="scroll-list" style="max-height: 250px; background: #f0f4f8; border-radius: 8px;">
-                    <!-- Se carga Unidad/Ruta/Teléfono dinámicamente -->
+                    <!-- Cargado dinámicamente -->
                 </div>
             </div>
 
@@ -154,23 +153,29 @@
         <div id="map"></div>
     </div>
 
-    <!-- VISTA: REGISTROS Y EXCEL -->
+    <!-- VISTA: REGISTROS Y CIERRE -->
     <div id="view-registros" class="view-layer" style="grid-template-columns: 1fr;">
         <button class="close-view" onclick="closeView('view-registros')">VOLVER AL MENÚ</button>
         <div style="background: white; color: #333; padding: 50px; overflow-y: auto;">
-            <h1>Gestión de Flota</h1>
-            <button onclick="descargarReporteExcel()" class="btn-action" style="background:#333; width: auto; padding: 10px 25px; margin-bottom: 20px;">
-                <i class="fas fa-file-excel"></i> Descargar Reporte Excel
-            </button>
+            <h1>Gestión de Operaciones</h1>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button onclick="descargarReporteExcel()" class="btn-action" style="background:#333; width: auto; padding: 10px 25px;">
+                    <i class="fas fa-file-excel"></i> Descargar Reporte y Cerrar Día
+                </button>
+                <button onclick="limpiarSistemaDiario()" class="btn-action" style="background:var(--danger); width: auto; padding: 10px 25px;">
+                    <i class="fas fa-trash-alt"></i> Limpiar Radar Manualmente
+                </button>
+            </div>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
                 <div class="card">
-                    <h3><i class="fas fa-building"></i> Cooperativas</h3>
+                    <h3>Cooperativas</h3>
                     <div id="listEmpresas" class="scroll-list"></div>
                     <button class="btn-action" style="background:var(--primary)" onclick="nuevaEmpresa()">+ Nueva Cooperativa</button>
                 </div>
                 <div class="card">
-                    <h3><i class="fas fa-bus"></i> Unidades Autorizadas</h3>
+                    <h3>Unidades Autorizadas (Monitor GPS)</h3>
                     <div id="listConductores" class="scroll-list"></div>
                     <button class="btn-action" style="background:var(--success)" onclick="registrarConductorAdmin()">+ Generar QR Unidad</button>
                 </div>
@@ -197,14 +202,13 @@
         const busIcon = L.divIcon({ html: '<i class="fas fa-bus" style="color:#1a73e8; font-size:22px; text-shadow: 0 0 3px white;"></i>', className: 'b-icon', iconSize: [22, 22] });
         let markersBuses = {};
 
-        // Sincronización GPS, limpieza y detalle en vivo[cite: 1]
+        // Sincronización y Limpieza automática de inactivos[cite: 1]
         db.ref('buses').on('value', snap => {
             let activos = 0;
             const detalleBox = document.getElementById('detalleActivos');
             const busesLive = snap.val() || {};
             detalleBox.innerHTML = ""; 
 
-            // Limpiar marcadores de buses inactivos[cite: 1]
             for (let id in markersBuses) {
                 if (!busesLive[id] || busesLive[id].estado !== 'activo') {
                     map.removeLayer(markersBuses[id]);
@@ -216,26 +220,23 @@
                 const b = child.val();
                 if(b.estado === 'activo') {
                     activos++;
-                    
-                    // Detalle para el Centro de Control[cite: 1]
                     detalleBox.innerHTML += `
                         <div style="padding: 10px; border-bottom: 1px solid #d1d9e6; font-size: 13px; color: #333;">
                             <b style="color:var(--primary)">Unidad: ${child.key}</b><br>
-                            <i class="fas fa-route"></i> Ruta: ${b.ruta || 'Sin asignar'}<br>
+                            <i class="fas fa-route"></i> Ruta: ${b.ruta || 'N/A'}<br>
                             <i class="fas fa-phone"></i> Tel: ${b.telefono || 'N/A'}
                         </div>`;
 
                     if(markersBuses[child.key]) markersBuses[child.key].setLatLng([b.lat, b.lng]);
                     else markersBuses[child.key] = L.marker([b.lat, b.lng], {icon: busIcon}).addTo(map)
-                        .bindPopup(`<b>Unidad: ${child.key}</b><br>Ruta: ${b.ruta}<br>Tel: ${b.telefono}`);
+                        .bindPopup(`<b>Unidad: ${child.key}</b><br>Ruta: ${b.ruta}`);
                 }
             });
             document.getElementById('countBuses').innerText = activos;
-            if (activos === 0) detalleBox.innerHTML = "<p style='text-align:center; padding:20px; color:#999;'>Sin unidades activas.</p>";
             actualizarListaMonitoreo(busesLive);
         });
 
-        // Monitor de registros con alertas de tiempo de parada[cite: 1]
+        // Monitor de registros con alertas de tiempo[cite: 1]
         function actualizarListaMonitoreo(busesLive) {
             db.ref('conductores_autorizados').once('value', snap => {
                 const list = document.getElementById('listConductores');
@@ -266,10 +267,48 @@
                             </div>
                             <div style="display:flex; gap:4px; margin-top:8px;">
                                 <span class="tag" style="background:var(--primary)" onclick="db.ref('conductores_autorizados/${id}').update({estado:'validada'})">Validar</span>
-                                <span class="tag" style="background:var(--danger)" onclick="db.ref('conductores_autorizados/${id}').remove()">Borrar</span>
+                                <button onclick="db.ref('conductores_autorizados/${id}').remove()" style="border:none; background:none;">🗑️</button>
                             </div>
                         </div>`;
                 });
+            });
+        }
+
+        // Limpieza de rastro diario (Buses y Reportes)[cite: 1]
+        function limpiarSistemaDiario() {
+            if(confirm("¿Reiniciar radar? (Eliminará unidades inactivas y duplicados de hoy)")) {
+                db.ref('buses').set(null).then(() => {
+                    alert("Radar reiniciado.");
+                    location.reload();
+                });
+            }
+        }
+
+        function descargarReporteExcel() {
+            db.ref('buses').once('value', snap => {
+                const data = [];
+                snap.forEach(child => {
+                    const b = child.val();
+                    // Solo incluimos unidades con datos válidos de hoy[cite: 1]
+                    if (b.lat && b.lng) {
+                        data.push({
+                            Unidad: child.key,
+                            Ruta: b.ruta || 'N/A',
+                            Telefono: b.telefono || 'N/A',
+                            Estado: b.estado,
+                            Actualizado: new Date(b.ultima_actualizacion).toLocaleString()
+                        });
+                    }
+                });
+
+                if (data.length === 0) return alert("No hay datos para exportar.");
+
+                const ws = XLSX.utils.json_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Reporte_Diario");
+                XLSX.writeFile(wb, `Reporte_MyTuc_${new Date().toLocaleDateString()}.xlsx`);
+                
+                setTimeout(limpiarSistemaDiario, 2000);
             });
         }
 
@@ -298,36 +337,6 @@
             window.open(qrUrl, '_blank');
         }
 
-        // Exportar Reporte Excel[cite: 1]
-        function descargarReporteExcel() {
-            db.ref('buses').once('value', snap => {
-                const data = [];
-                snap.forEach(child => {
-                    const b = child.val();
-                    data.push({
-                        Unidad: child.key,
-                        Ruta: b.ruta || 'N/A',
-                        Telefono: b.telefono || 'N/A',
-                        Estado: b.estado,
-                        Ultima_Actualizacion: b.ultima_actualizacion ? new Date(b.ultima_actualizacion).toLocaleString() : 'N/A',
-                        Latitud: b.lat,
-                        Longitud: b.lng
-                    });
-                });
-                const ws = XLSX.utils.json_to_sheet(data);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Flota_MyTuc");
-                XLSX.writeFile(wb, `Reporte_MyTuc_${new Date().toLocaleDateString()}.xlsx`);
-            });
-        }
-
-        db.ref('chat_comunidad').on('child_added', snap => {
-            const m = snap.val();
-            const div = document.createElement('div');
-            div.className = "list-item";
-            div.innerHTML = `<small><b>${m.telefono || 'Anon'}</b></small><br>${m.mensaje}`;
-            document.getElementById('listAlertas').prepend(div);
-        });
         function limpiarChat() { db.ref('chat_comunidad').set(null); document.getElementById('listAlertas').innerHTML=""; }
     </script>
 </body>
