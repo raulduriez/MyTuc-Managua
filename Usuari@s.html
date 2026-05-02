@@ -3,189 +3,198 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyBus - Gestión y Localización</title>
+    <title>MyBus - Panel de Control</title>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-search@3.0.2/dist/leaflet-search.min.css" />
     
     <style>
-        body { margin: 0; padding: 0; font-family: 'Segoe UI', Arial; background: #f4f7f6; display: flex; height: 100vh; }
-        
-        /* Panel Lateral Fijo para no perder el diseño */
-        .sidebar {
-            width: 360px;
-            background: white;
-            padding: 20px;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-            z-index: 1000;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
+        :root {
+            --azul-oscuro: #000428;
+            --azul-deep: #004e92;
+            --celeste: #00A8E8;
+            --verde-neon: #2ECC71;
+            --blanco-puro: #ffffff;
+            --gris-claro: #f8f9fa;
         }
 
-        #map { flex-grow: 1; height: 100%; position: relative; }
-
-        .logo-container { text-align: center; margin-bottom: 20px; }
-        .logo-container img { max-width: 160px; border-radius: 8px; }
-
-        .section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
-        h3 { font-size: 1rem; color: #2c3e50; margin-bottom: 10px; border-left: 4px solid #3498db; padding-left: 10px; }
-        
-        label { display: block; font-weight: bold; font-size: 0.85rem; margin-bottom: 5px; color: #555; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; margin-bottom: 10px; }
-
-        .btn-gps { background: #3498db; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-gps:hover { background: #2980b9; }
-
-        /* Lista de Paradas Cercanas */
-        .stop-card {
-            background: #fff; border: 1px solid #e0e0e0; padding: 12px;
-            margin-top: 8px; border-radius: 8px; cursor: pointer;
+        body { 
+            margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; 
+            background: var(--gris-claro); display: flex; flex-direction: column; height: 100vh; 
         }
-        .stop-card h4 { margin: 0 0 5px 0; font-size: 0.9rem; color: #2980b9; }
-        .stop-card p { margin: 0; font-size: 0.8rem; color: #7f8c8d; }
 
-        .status-msg { font-size: 0.85rem; color: #e74c3c; font-weight: bold; text-align: center; padding: 10px; }
-        
-        /* Ajuste para que el buscador de Leaflet se vea bien en el panel */
-        .leaflet-control-search { width: 100% !important; margin: 0 !important; box-shadow: none !important; border: 1px solid #ccc !important; }
+        /* HEADER SEGÚN BOCETO */
+        header { 
+            background: var(--azul-oscuro); color: white; padding: 10px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 3px solid var(--celeste);
+        }
+
+        .main-container { display: flex; flex: 1; overflow: hidden; }
+
+        /* SIDEBAR IZQUIERDO */
+        .sidebar { 
+            width: 320px; background: var(--blanco-puro); border-right: 1px solid #ddd;
+            display: flex; flex-direction: column; padding: 15px; gap: 15px;
+        }
+
+        .btn-accion { 
+            background: var(--azul-deep); color: white; border: none; padding: 12px;
+            border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.9rem;
+        }
+
+        .btn-accion.activo { background: var(--verde-neon); color: var(--azul-oscuro); }
+
+        .search-box-container { 
+            border: 2px solid var(--celeste); padding: 5px; border-radius: 6px;
+        }
+
+        /* PANEL DE DATOS CERCANOS */
+        .datos-cerca { background: #eef7ff; padding: 10px; border-radius: 6px; border-left: 4px solid var(--celeste); }
+        .datos-cerca h4 { margin: 0 0 5px 0; font-size: 0.85rem; }
+
+        /* AREA CENTRAL: MAPA */
+        #map { flex: 1; position: relative; }
+
+        /* FOOTER DE INFORMACIÓN (CLIMA/ACCIDENTES) */
+        .info-footer { 
+            background: var(--azul-oscuro); color: white; padding: 10px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 0.9rem;
+        }
+
+        /* BARRA INFERIOR DE MENSAJES Y WHATSAPP */
+        .bottom-bar { 
+            background: var(--blanco-puro); border-top: 1px solid #ddd; padding: 10px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .whatsapp-link { color: #25d366; font-weight: bold; text-decoration: none; display: flex; align-items: center; gap: 5px; }
+
+        /* Estilo para los inputs */
+        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
-<div class="sidebar">
-    <div class="logo-container">
-        <img src="img/logo2.jpeg" alt="MyBus Logo">
-    </div>
+<header>
+    <img src="img/logo2.jpeg" alt="Logo" style="height: 40px; border-radius: 4px;">
+    <div>Usuario: <span id="display-phone">--------</span></div>
+</header>
 
-    <!-- Registro y GPS -->
-    <div class="section">
-        <h3>Tu Ubicación</h3>
-        <label>Número de Teléfono</label>
-        <input type="tel" id="user-phone" placeholder="8888-8888">
-        <button class="btn-gps" onclick="getLocation()">ACTIVAR MI GPS</button>
-    </div>
-
-    <!-- Filtros de Ruta -->
-    <div class="section">
-        <h3>Opciones de Viaje</h3>
-        <label>Sentido de la Ruta</label>
-        <select id="route-direction">
-            <option value="ida">Ida (Hacia el Centro)</option>
-            <option value="vuelta">Vuelta (Hacia la Terminal)</option>
-        </select>
-    </div>
-
-    <!-- Buscador Manual -->
-    <div class="section">
-        <h3>Consultar Parada</h3>
-        <div id="search-container"></div> <!-- Aquí se inyecta el buscador para escribir -->
-        <div id="search-details"></div>
-    </div>
-
-    <!-- Resultados de Proximidad -->
-    <div class="section">
-        <h3>Paradas Cercanas (1 KM)</h3>
-        <div id="nearby-list">
-            <p style="font-size: 0.8rem; color: #999; text-align: center;">Activa el GPS para calcular distancias...</p>
+<div class="main-container">
+    <aside class="sidebar">
+        <!-- Bloque de Registro según boceto -->
+        <div id="registro-seccion">
+            <label>Número de teléfono</label>
+            <input type="tel" id="user-phone" placeholder="Ingresa tu número">
+            <button class="btn-accion" style="margin-top:10px; width:100%" onclick="activarUsuario()">GPS ACTIVAR</button>
         </div>
-    </div>
 
-    <div id="bus-status" class="status-msg"></div>
+        <button class="btn-accion" id="btn-auto">Botón Activación Automática</button>
+        
+        <div class="search-box-container">
+            <label style="font-size: 0.75rem; font-weight: bold;">BUSCAR PARADA (ESCRIBIR)</label>
+            <div id="search-control-here"></div>
+        </div>
+
+        <!-- Lista de tiempos según boceto -->
+        <div class="datos-cerca">
+            <h4>DATOS CERCANOS</h4>
+            <div id="bus-list">
+                <p>BUS 1: -- MINUTOS</p>
+                <p>BUS 2: -- MINUTOS</p>
+                <p>PARADA: XXX</p>
+            </div>
+        </div>
+    </aside>
+
+    <main id="map"></main>
 </div>
 
-<div id="map"></div>
+<!-- Sección de información adicional del boceto -->
+<div class="info-footer">
+    <div id="weather-info">🌤️ Cargando Clima... 28°C</div>
+    <div id="accident-info">⚠️ Sin accidentes en ruta</div>
+</div>
+
+<div class="bottom-bar">
+    <div id="instant-msg" style="color: var(--azul-deep); font-weight: bold;">MENSAJES INSTANTÁNEOS: Bienvenidos a MyBus</div>
+    <a href="https://wa.me/505xxxxxxxx" class="whatsapp-link">
+        Contacto WhatsApp 💬
+    </a>
+</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-search@3.0.2/dist/leaflet-search.min.js"></script>
 
-<!-- Tus datos de Managua cargados desde el archivo externo -->
+<!-- Carga de tu base de datos de paradas de Managua -->
 <script src="PUNTOS_MANAGUA_01052026_1.js"></script>
 
 <script>
-    var map = L.map('map').setView([12.1328, -86.2504], 13);
+    var map = L.map('map').setView([12.1328, -86.2504], 14);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
     var userMarker;
     var paradasLayer;
 
-    // Inicializar capa de paradas
-    paradasLayer = L.geoJSON(PUNTOS_MANAGUA_01052026_1, {
-        onEachFeature: function(feature, layer) {
-            layer.bindPopup("<b>" + feature.properties.name + "</b>");
+    // Función para activar el usuario según tu boceto
+    function activarUsuario() {
+        var phone = document.getElementById('user-phone').value;
+        if(phone.length < 8) {
+            alert("Por favor ingresa un número válido");
+            return;
         }
-    }).addTo(map);
-
-    // Buscador que permite ESCRIBIR en el panel lateral
-    var searchControl = new L.Control.Search({
-        container: 'search-container',
-        layer: paradasLayer,
-        propertyName: 'name',
-        marker: false,
-        moveToLocation: function(latlng, title, map) {
-            map.setView(latlng, 16);
-            mostrarInfoParada(latlng, title);
-        }
-    });
-    map.addControl(searchControl);
-
-    function getDistance(lat1, lon1, lat2, lon2) {
-        var R = 6371; 
-        var dLat = (lat2-lat1) * Math.PI/180;
-        var dLon = (lon2-lon1) * Math.PI/180;
-        var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * 
-                Math.sin(dLon/2) * Math.sin(dLon/2);
-        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        document.getElementById('display-phone').innerText = phone;
+        obtenerUbicacionReal();
     }
 
-    function getLocation() {
+    function obtenerUbicacionReal() {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(pos => {
                 const { latitude, longitude } = pos.coords;
                 if (userMarker) map.removeLayer(userMarker);
-                userMarker = L.marker([latitude, longitude]).addTo(map).bindPopup("Tu ubicación").openPopup();
-                map.setView([latitude, longitude], 15);
                 
-                procesarParadasCercanas(latitude, longitude);
+                // Icono azul para el usuario
+                userMarker = L.circleMarker([latitude, longitude], {
+                    radius: 10, color: '#004e92', fillColor: '#00A8E8', fillOpacity: 1
+                }).addTo(map).bindPopup("Tu Ubicación Actual").openPopup();
+                
+                map.setView([latitude, longitude], 16);
+                document.getElementById('btn-auto').classList.add('activo');
+                calcularTiemposSimulados();
             });
         }
     }
 
-    function procesarParadasCercanas(lat, lng) {
-        let cercas = [];
-        PUNTOS_MANAGUA_01052026_1.features.forEach(f => {
-            let d = getDistance(lat, lng, f.geometry.coordinates[1], f.geometry.coordinates[0]);
-            if (d <= 1) cercas.push({ ...f, dist: d });
-        });
-
-        cercas.sort((a, b) => a.dist - b.dist);
-        
-        let html = "";
-        if (cercas.length === 0) {
-            html = "<p class='status-msg'>No hay paradas a menos de 1km.</p>";
-        } else {
-            cercas.slice(0, 3).forEach(c => {
-                html += `<div class="stop-card" onclick="focarParada(${c.geometry.coordinates[1]}, ${c.geometry.coordinates[0]})">
-                    <h4>${c.properties.name}</h4>
-                    <p>Distancia: ${c.dist.toFixed(2)} km | Tiempo est.: ${Math.round(c.dist * 12)} min</p>
-                </div>`;
-            });
+    // Capa de Paradas vinculada al buscador
+    paradasLayer = L.geoJSON(PUNTOS_MANAGUA_01052026_1, {
+        onEachFeature: function(feature, layer) {
+            layer.bindPopup("<b>Parada:</b> " + feature.properties.name);
         }
-        document.getElementById('nearby-list').innerHTML = html;
-    }
+    }).addTo(map);
 
-    function focarParada(lat, lng) {
-        map.setView([lat, lng], 17);
-    }
+    // Configuración del buscador para que dejes ESCRIBIR (como pediste en el boceto)
+    var searchControl = new L.Control.Search({
+        container: 'search-control-here',
+        layer: paradasLayer,
+        propertyName: 'name',
+        marker: false,
+        textPlaceholder: 'Escribe el nombre...',
+        moveToLocation: function(latlng, title, map) {
+            map.setView(latlng, 17);
+            document.getElementById('instant-msg').innerText = "CONSULTANDO: " + title;
+        }
+    });
+    map.addControl(searchControl);
 
-    function mostrarInfoParada(latlng, title) {
-        // Aquí puedes añadir la lógica de tiempo de llegada y buses cercanos
-        document.getElementById('search-details').innerHTML = `
-            <div class="stop-card" style="border-left: 4px solid #2ecc71;">
-                <h4>${title}</h4>
-                <p>Consultando disponibilidad de buses...</p>
-            </div>`;
+    function calcularTiemposSimulados() {
+        // Aquí conectaremos con tu Firebase en el siguiente paso para ver buses reales
+        document.getElementById('bus-list').innerHTML = `
+            <p style="color: var(--azul-deep); font-weight:bold;">BUS 1: 3 MINUTOS</p>
+            <p style="color: var(--azul-deep); font-weight:bold;">BUS 2: 8 MINUTOS</p>
+            <p>PARADA MÁS CERCANA: En rango (1km)</p>
+        `;
     }
 </script>
 
