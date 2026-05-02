@@ -4,115 +4,59 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CCTN | Admin Maestro MyTuc</title>
-    
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <style>
-        :root {
-            --primary: #1a73e8;
-            --danger: #d93025;
-            --success: #1e8e3e;
-            --warning: #f39c12;
-            --sidebar-bg: #ffffff;
-            --border: #dadce0;
-        }
-
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            margin: 0;
-            display: grid;
-            grid-template-columns: 380px 1fr;
-            grid-template-rows: 75px 1fr;
-            height: 100vh;
-            background: #f1f3f4;
-        }
-
-        header {
-            grid-column: 1 / -1;
-            background: #ffffff;
-            border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; padding: 0 25px;
-            justify-content: space-between; z-index: 1001;
-        }
-
+        :root { --primary: #1a73e8; --danger: #d93025; --success: #1e8e3e; --warning: #f39c12; --border: #dadce0; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: grid; grid-template-columns: 380px 1fr; grid-template-rows: 75px 1fr; height: 100vh; background: #f1f3f4; }
+        header { grid-column: 1 / -1; background: #fff; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 25px; justify-content: space-between; z-index: 1001; }
         .logo-area { display: flex; align-items: center; gap: 15px; }
         .logo-area img { height: 55px; border-radius: 8px; }
-        
-        #clock { 
-            font-family: 'Courier New', monospace; font-size: 1.3rem; font-weight: bold; 
-            background: #e8f0fe; padding: 8px 20px; border-radius: 25px; color: var(--primary);
-            border: 1px solid var(--primary);
-        }
-
-        .sidebar { background: var(--sidebar-bg); border-right: 1px solid var(--border); overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
-        
-        .card { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .card h3 { margin: 0 0 12px 0; font-size: 13px; text-transform: uppercase; color: #5f6368; border-bottom: 1px solid #f1f1f1; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-
-        .btn { width: 100%; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; margin-top: 10px; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        #clock { font-family: monospace; font-size: 1.3rem; font-weight: bold; background: #e8f0fe; padding: 8px 20px; border-radius: 25px; color: var(--primary); }
+        .sidebar { background: #fff; border-right: 1px solid var(--border); overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+        .card { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 10px; }
+        .btn { width: 100%; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-success { background: var(--success); color: white; }
         .btn-main { background: var(--primary); color: white; }
-
         .scroll-list { max-height: 200px; overflow-y: auto; font-size: 12px; }
-        .list-item { padding: 12px; border-bottom: 1px solid #f1f1f1; background: #fff; margin-bottom: 5px; border-radius: 8px; }
-        
-        .tag { padding: 4px 8px; border-radius: 6px; font-size: 9px; color: white; font-weight: bold; cursor: pointer; text-align: center; text-transform: uppercase; flex: 1; transition: 0.2s; border: 1px solid transparent; }
-        .tag-inactive { background: #f8f9fa; color: #999; border-color: #ddd; }
-
+        .list-item { padding: 12px; border-bottom: 1px solid #f1f1f1; }
+        .tag { padding: 4px 8px; border-radius: 6px; font-size: 9px; color: white; font-weight: bold; cursor: pointer; text-transform: uppercase; }
         #map { height: 100%; width: 100%; }
-        .qr-thumb { height: 45px; width: 45px; border: 1px solid #eee; border-radius: 5px; cursor: pointer; }
-
-        /* Capa de Acceso */
+        .qr-thumb { height: 50px; width: 50px; border: 1px solid #eee; cursor: pointer; border-radius: 5px; }
         #access-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f1f3f4; display: flex; align-items: center; justify-content: center; z-index: 9999; }
-        .access-card { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; width: 320px; border-top: 5px solid var(--primary); }
+        .access-card { background: white; padding: 40px; border-radius: 15px; text-align: center; width: 320px; border-top: 5px solid var(--primary); }
     </style>
 </head>
 <body>
-
     <div id="access-overlay">
         <div class="access-card">
             <img src="img/Logo.jpeg" style="height:70px; margin-bottom:15px; border-radius:10px;">
             <h2>Panel Maestro</h2>
-            <input type="password" id="access-code" placeholder="CÓDIGO DE ACCESO" style="width:100%; padding:12px; margin:20px 0; border:2px solid #dadce0; border-radius:8px; text-align:center;">
+            <input type="password" id="access-code" placeholder="CÓDIGO" style="width:100%; padding:12px; margin:20px 0; border:1px solid #ccc; text-align:center;">
             <button class="btn btn-main" onclick="checkAccess()">INGRESAR</button>
         </div>
     </div>
-
     <header>
-        <div class="logo-area">
-            <img src="img/Logo.jpeg" alt="Logo">
-            <div><h2 style="margin:0; color:var(--primary); font-size:20px;">MyTuc Admin</h2><small>GESTIÓN CENTRAL</small></div>
-        </div>
+        <div class="logo-area"><img src="img/Logo.jpeg"><div><h2 style="margin:0; color:var(--primary);">MyTuc Admin</h2></div></div>
         <div id="clock">00:00:00</div>
     </header>
-
     <aside class="sidebar">
         <div class="card">
-            <h3><i class="fas fa-bus"></i> Cooperativas</h3>
+            <h3>Cooperativas</h3>
             <div id="listEmpresas" class="scroll-list"></div>
-            <button class="btn btn-main" onclick="nuevaEmpresa()"><i class="fas fa-plus"></i> Nueva Cooperativa</button>
+            <button class="btn btn-main" onclick="nuevaEmpresa()">Nueva Cooperativa</button>
         </div>
-
         <div class="card">
-            <h3><i class="fas fa-users"></i> Unidades Autorizadas</h3>
+            <h3>Unidades y QR</h3>
             <div id="listConductores" class="scroll-list"></div>
-            <button class="btn btn-success" onclick="registrarConductorAdmin()"><i class="fas fa-qrcode"></i> Registrar y Crear QR</button>
+            <button class="btn btn-success" onclick="registrarConductorAdmin()">Generar QR Unidad</button>
         </div>
-
-        <div class="card">
-            <h3><i class="fas fa-exclamation-triangle"></i> Reportes Chat</h3>
-            <div id="listAlertas" class="scroll-list"></div>
-            <button class="btn" style="background:#eee;" onclick="limpiarChat()">Limpiar Chat</button>
-        </div>
+        <div class="card"><h3>Reportes Chat</h3><div id="listAlertas" class="scroll-list"></div></div>
     </aside>
-
     <main><div id="map"></div></main>
-
     <script>
         const firebaseConfig = { apiKey: "AIzaSyDGBkCnWppaprzs2gUkTj16nk6WOiLn5yQ", databaseURL: "https://bus-tracker-managua-default-rtdb.firebaseio.com" };
         firebase.initializeApp(firebaseConfig);
@@ -126,15 +70,9 @@
 
         const map = L.map('map', { zoomControl: false }).setView([12.1328, -86.2504], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-        const busIcon = L.divIcon({
-            html: '<i class="fas fa-bus" style="color: #1a73e8; font-size: 22px; text-shadow: 0 0 2px white;"></i>',
-            className: 'custom-bus-icon', iconSize: [22, 22], iconAnchor: [11, 11]
-        });
-
+        const busIcon = L.divIcon({ html: '<i class="fas fa-bus" style="color:#1a73e8; font-size:20px;"></i>', className: 'b-icon', iconSize: [20, 20] });
         let markersBuses = {};
 
-        // RASTREO Y MAPA
         db.ref('buses').on('value', snap => {
             snap.forEach(child => {
                 const b = child.val();
@@ -145,42 +83,30 @@
             });
         });
 
-        // GESTIÓN COOPERATIVAS
         function nuevaEmpresa() {
             const nom = prompt("Nombre Cooperativa:");
-            if(nom) {
-                const id = "BUS-" + Math.floor(1000 + Math.random()*9000);
-                db.ref('empresas/' + id).set({ nombre: nom, estado: 'activo' });
-            }
+            if(nom) db.ref('empresas/' + Date.now()).set({ nombre: nom, estado: 'activo' });
         }
 
         db.ref('empresas').on('value', snap => {
             const list = document.getElementById('listEmpresas');
             list.innerHTML = "";
             snap.forEach(child => {
-                const e = child.val();
-                list.innerHTML += `<div class="list-item">
-                    <b>${e.nombre}</b>
-                    <button onclick="db.ref('empresas/${child.key}').remove()" class="tag" style="background:var(--danger)">Eliminar</button>
-                </div>`;
+                list.innerHTML += `<div class="list-item"><b>${child.val().nombre}</b> <button onclick="db.ref('empresas/${child.key}').remove()" class="tag" style="background:red">Borrar</button></div>`;
             });
         });
 
-        // GESTIÓN CONDUCTORES Y QR
         function registrarConductorAdmin() {
-            const unidad = prompt("Número de Unidad (ej: 114):");
-            const empresa = prompt("Nombre de Cooperativa:");
+            const unidad = prompt("Unidad:");
+            const empresa = prompt("Cooperativa:");
             if(!unidad || !empresa) return;
-
-            const cod = "EMP-" + Math.floor(1000 + Math.random()*9000) + "-" + Math.floor(10000 + Math.random()*90000);
+            const cod = "EMP-" + Math.floor(1000 + Math.random()*9000);
             
-            // --- AQUÍ LA FUSIÓN DEL QR CON TU GITHUB ---
-            const urlBase = "https://TU_USUARIO.github.io/TU_REPO/conductor.html"; 
+            // URL CORREGIDA PARA TU GITHUB
+            const urlBase = "https://raulduriez.github.io/MyTuc-Managua/conductor.html";
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(urlBase + "?id=" + cod)}`;
 
-            db.ref('conductores_autorizados/' + cod).set({
-                unidad: unidad, empresa_nombre: empresa, estado: 'validada', qr: qrUrl, creado: Date.now()
-            });
+            db.ref('conductores_autorizados/' + cod).set({ unidad, empresa_nombre: empresa, estado: 'validada', qr: qrUrl });
             window.open(qrUrl, '_blank');
         }
 
@@ -189,26 +115,21 @@
             list.innerHTML = "";
             snap.forEach(child => {
                 const c = child.val(), id = child.key;
-                list.innerHTML += `
-                    <div class="list-item">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div><b>Unidad ${c.unidad}</b><br><small>${id}</small></div>
-                            <img src="${c.qr}" class="qr-thumb" onclick="window.open('${c.qr}')">
-                        </div>
-                        <div style="display:flex; gap:4px; margin-top:10px;">
-                            <span class="tag" style="background:${c.estado==='validada'?'var(--success)':'#ccc'}" onclick="updateStatus('${id}', 'validada')">Validar</span>
-                            <span class="tag" style="background:${c.estado==='pausada'?'var(--warning)':'#ccc'}" onclick="updateStatus('${id}', 'pausada')">Pausar</span>
-                            <span class="tag" style="background:${c.estado==='bloqueada'?'var(--danger)':'#ccc'}" onclick="updateStatus('${id}', 'bloqueada')">Bloquear</span>
-                            <button onclick="eliminarConductor('${id}')" style="border:none; background:none; cursor:pointer;"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>`;
+                list.innerHTML += `<div class="list-item">
+                    <div style="display:flex; justify-content:space-between">
+                        <b>Unidad ${c.unidad}</b>
+                        <img src="${c.qr}" class="qr-thumb" onclick="window.open('${c.qr}')">
+                    </div>
+                    <div style="display:flex; gap:3px; margin-top:5px;">
+                        <span class="tag" style="background:${c.estado==='validada'?'green':'#ccc'}" onclick="db.ref('conductores_autorizados/${id}').update({estado:'validada'})">Validar</span>
+                        <span class="tag" style="background:${c.estado==='pausada'?'orange':'#ccc'}" onclick="db.ref('conductores_autorizados/${id}').update({estado:'pausada'})">Pausar</span>
+                        <span class="tag" style="background:${c.estado==='bloqueada'?'red':'#ccc'}" onclick="db.ref('conductores_autorizados/${id}').update({estado:'bloqueada'})">Bloquear</span>
+                        <button onclick="db.ref('conductores_autorizados/${id}').remove()" style="border:none; background:none;">🗑️</button>
+                    </div>
+                </div>`;
             });
         });
 
-        function updateStatus(id, stat) { db.ref('conductores_autorizados/' + id).update({ estado: stat }); }
-        function eliminarConductor(id) { if(confirm("¿Eliminar?")) db.ref('conductores_autorizados/' + id).remove(); }
-
-        // CHAT Y ALERTAS
         db.ref('chat_comunidad').on('child_added', snap => {
             const m = snap.val();
             const div = document.createElement('div');
@@ -216,7 +137,6 @@
             div.innerHTML = `<small><b>${m.telefono || 'Anon'}</b></small><br>${m.mensaje}`;
             document.getElementById('listAlertas').prepend(div);
         });
-        function limpiarChat() { if(confirm("¿Limpiar reportes?")) db.ref('chat_comunidad').set(null); }
 
         setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }, 1000);
     </script>
