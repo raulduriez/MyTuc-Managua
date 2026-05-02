@@ -213,7 +213,7 @@
         const busIcon = L.divIcon({ html: '<i class="fas fa-bus" style="color:#1a73e8; font-size:22px; text-shadow: 0 0 3px white;"></i>', className: 'b-icon', iconSize: [22, 22] });
         let markersBuses = {};
 
-        // 1. Contador de Usuarios Pasajeros Conectados
+        // 1. Contador de Usuarios Pasajeros Conectados[cite: 1]
         db.ref('control_master/usuarios_activos').on('value', snap => {
             document.getElementById('countUsers').innerText = snap.numChildren();
         });
@@ -225,7 +225,7 @@
             const busesLive = snap.val() || {};
             detalleBox.innerHTML = ""; 
 
-            // Limpieza de marcadores inactivos
+            // Limpieza de marcadores inactivos[cite: 1]
             for (let id in markersBuses) {
                 if (!busesLive[id]) {
                     map.removeLayer(markersBuses[id]);
@@ -240,12 +240,12 @@
                 // Cálculo de estado de conexión GPS[cite: 1]
                 const tiempoMsg = b.timestamp || b.ultima_actualizacion;
                 const min = (Date.now() - tiempoMsg) / 60000;
-                let colorStatus = "--success"; // Verde
-                if(min > 2) colorStatus = "--warning"; // Naranja
-                if(min > 5) colorStatus = "--danger"; // Rojo
+                let colorStatus = "#1e8e3e"; // Verde
+                if(min > 2) colorStatus = "#f39c12"; // Naranja
+                if(min > 5) colorStatus = "#d93025"; // Rojo
 
                 detalleBox.innerHTML += `
-                    <div style="padding: 10px; border-bottom: 1px solid #d1d9e6; border-left: 5px solid var(${colorStatus})">
+                    <div style="padding: 10px; border-bottom: 1px solid #d1d9e6; border-left: 5px solid ${colorStatus}">
                         <b style="color:var(--primary)">Unidad: ${child.key}</b><br>
                         <small><i class="fas fa-signal"></i> ${min < 1 ? 'En línea' : 'Hace ' + Math.floor(min) + ' min'}</small>
                     </div>`;
@@ -333,7 +333,7 @@
             });
         });
 
-        // CORRECCIÓN QR PARA EVITAR 404[cite: 2]
+        // CORRECCIÓN QR PARA EVITAR 404[cite: 1, 2]
         function registrarConductorAdmin() {
             const unidad = prompt("Número de Unidad:");
             const empresa = prompt("Nombre de Cooperativa:");
@@ -341,7 +341,7 @@
             
             const idUnidad = "BUS-" + Math.floor(1000 + Math.random() * 9000);
             
-            // Construcción de URL basada en la ubicación actual del archivo
+            // Construcción de URL robusta basada en la ubicación actual del archivo[cite: 1, 2]
             const urlActual = window.location.href;
             const rutaBase = urlActual.substring(0, urlActual.lastIndexOf('/'));
             const urlFinalConductor = `${rutaBase}/conductor.html?id=${idUnidad}`;
