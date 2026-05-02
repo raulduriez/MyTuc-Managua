@@ -87,7 +87,6 @@
 </head>
 <body>
 
-    <!-- BLOQUEO DE ACCESO -->
     <div id="access-overlay">
         <div class="access-card">
             <img src="img/Logo.jpeg" style="width: 100px; border-radius: 10px; margin-bottom: 20px;">
@@ -97,7 +96,6 @@
         </div>
     </div>
 
-    <!-- PORTAL PRINCIPAL -->
     <div id="main-portal">
         <div class="portal-header">My-Tuc Managua</div>
         <div class="portal-container">
@@ -116,64 +114,46 @@
             <div class="menu-options">
                 <div class="menu-btn" onclick="openView('view-stats')">
                     <i class="fas fa-chart-line"></i>
-                    <div>
-                        <h3>Centro de Control y Mapa</h3>
-                        <p>Radar en vivo, detalle de unidades y alertas</p>
-                    </div>
+                    <div><h3>Centro de Control</h3><p>Radar en vivo y unidades</p></div>
                 </div>
                 <div class="menu-btn" onclick="openView('view-registros')">
                     <i class="fas fa-file-signature"></i>
-                    <div>
-                        <h3>Gestión de Registros</h3>
-                        <p>Cooperativas, Unidades y Actualizaciones</p>
-                    </div>
+                    <div><h3>Gestión de Registros</h3><p>Actualizar flota y descargar Excel</p></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- VISTA: CENTRO DE CONTROL -->
     <div id="view-stats" class="view-layer">
         <button class="close-view" onclick="closeView('view-stats')">SALIR X</button>
         <aside class="sidebar">
-            <h2 style="color:var(--primary)">Centro de Control</h2>
-            <div class="card">
-                <h3>Pasajeros Conectados</h3>
-                <div style="text-align:center; padding:10px;">
-                    <b id="countUsers" style="font-size:32px; color:var(--warning);">0</b><br>
-                    <small>USUARIOS EN RADAR</small>
-                </div>
-            </div>
-            <div class="card">
-                <h3>Estado de la Flota</h3>
-                <div style="text-align:center; padding:10px;">
-                    <b id="countBuses" style="font-size:32px; color:var(--primary);">0</b><br>
-                    <small style="color:var(--success);">UNIDADES ACTIVAS</small>
-                </div>
-            </div>
-            <div class="card">
-                <h3>Unidades en Movimiento</h3>
-                <div id="detalleActivos" class="scroll-list" style="max-height: 250px; background: #f0f4f8; border-radius: 8px;"></div>
-            </div>
+            <div class="card"><h3>Pasajeros</h3><b id="countUsers" style="font-size:32px; color:var(--warning);">0</b></div>
+            <div class="card"><h3>Flota Activa</h3><b id="countBuses" style="font-size:32px; color:var(--primary);">0</b></div>
+            <div class="card"><h3>Unidades</h3><div id="detalleActivos" class="scroll-list" style="background: #f0f4f8; border-radius: 8px;"></div></div>
         </aside>
         <div id="map"></div>
     </div>
 
-    <!-- VISTA: REGISTROS Y GESTIÓN -->
     <div id="view-registros" class="view-layer" style="grid-template-columns: 1fr;">
         <button class="close-view" onclick="closeView('view-registros')">VOLVER AL MENÚ</button>
         <div style="background: white; color: #333; padding: 50px; overflow-y: auto;">
-            <h1>Administración de Unidades</h1>
+            <h1>Operaciones y Reportes</h1>
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <!-- FUNCIÓN SOLICITADA: DESCARGA Y LIMPIEZA SIMULTÁNEA -->
+                <button onclick="descargarReporteYActualizarRealidad()" class="btn-action" style="background:#333; width: auto; padding: 10px 25px;">
+                    <i class="fas fa-sync-alt"></i> Descargar Excel y Actualizar Radar
+                </button>
+            </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
                 <div class="card">
                     <h3>Cooperativas</h3>
                     <div id="listEmpresas" class="scroll-list"></div>
-                    <button class="btn-action" style="background:var(--primary)" onclick="nuevaEmpresa()">+ Nueva Cooperativa</button>
+                    <button class="btn-action" style="background:var(--primary)" onclick="nuevaEmpresa()">+ Nueva</button>
                 </div>
                 <div class="card">
-                    <h3>Control de Unidades</h3>
+                    <h3>Unidades Registradas</h3>
                     <div id="listConductores" class="scroll-list"></div>
-                    <button class="btn-action" style="background:var(--success)" onclick="registrarUnidad()">+ Registrar Nueva Unidad</button>
+                    <button class="btn-action" style="background:var(--success)" onclick="registrarUnidad()">+ Registrar Unidad</button>
                 </div>
             </div>
         </div>
@@ -184,16 +164,8 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        function checkAccess() {
-            const code = document.getElementById('access-code').value;
-            if (code === "7070" || code === "2026") document.getElementById('access-overlay').style.display = "none";
-            else alert("Acceso denegado");
-        }
-
-        function openView(id) { 
-            document.getElementById(id).style.display = "grid"; 
-            if(id === 'view-stats') setTimeout(() => map.invalidateSize(), 400); 
-        }
+        function checkAccess() { if (document.getElementById('access-code').value === "7070" || document.getElementById('access-code').value === "2026") document.getElementById('access-overlay').style.display = "none"; else alert("Error"); }
+        function openView(id) { document.getElementById(id).style.display = "grid"; if(id === 'view-stats') setTimeout(() => map.invalidateSize(), 400); }
         function closeView(id) { document.getElementById(id).style.display = "none"; }
 
         const map = L.map('map', { zoomControl: false }).setView([12.1328, -86.2504], 13);
@@ -201,7 +173,6 @@
         const busIcon = L.divIcon({ html: '<i class="fas fa-bus" style="color:#1a73e8; font-size:22px; text-shadow: 0 0 3px white;"></i>', className: 'b-icon', iconSize: [22, 22] });
         let markersBuses = {};
 
-        // Sincronización de Radar y Pasajeros
         db.ref('control_master/usuarios_activos').on('value', snap => { document.getElementById('countUsers').innerText = snap.numChildren(); });
 
         db.ref('buses').on('value', snap => {
@@ -224,49 +195,67 @@
             actualizarGestionUnidades(busesLive);
         });
 
-        // Gestión de Unidades Operativas (Sin Mini-QR)
         function actualizarGestionUnidades(busesLive) {
             db.ref('conductores_autorizados').once('value', snap => {
-                const list = document.getElementById('listConductores');
-                list.innerHTML = "";
+                const list = document.getElementById('listConductores'); list.innerHTML = "";
                 snap.forEach(child => {
-                    const c = child.val(), id = child.key;
-                    const live = busesLive[c.unidad];
+                    const c = child.val(), id = child.key, live = busesLive[c.unidad];
                     const min = live ? (Date.now() - (live.timestamp || live.ultima_actualizacion)) / 60000 : 999;
-                    let color = min <= 2 ? "var(--success)" : (min <= 5 ? "var(--warning)" : "#888");
-
-                    list.innerHTML += `
-                        <div class="list-item" style="background:#fff; border:1px solid #ddd; border-radius:10px; margin-bottom:10px; padding:10px;">
-                            <div style="display:flex; justify-content:space-between;">
-                                <div><b>Unidad: ${c.unidad}</b> <span class="tag" style="background:${color}">${min <= 5 ? 'ACTIVO' : 'OFFLINE'}</span><br><small>${c.empresa_nombre}</small></div>
-                            </div>
-                            <div style="margin-top:10px;">
-                                <button class="tag" style="background:var(--primary)" onclick="validarUnidad('${id}')">Validar</button>
-                                <button class="tag" style="background:var(--warning)" onclick="actualizarUnidad('${id}')">Actualizar</button>
-                                <button class="tag" style="background:var(--danger)" onclick="borrarUnidad('${id}')">Borrar</button>
-                            </div>
-                        </div>`;
+                    let color = min <= 5 ? "var(--success)" : "#888";
+                    list.innerHTML += `<div class="list-item" style="background:#fff; border:1px solid #ddd; border-radius:10px; margin-bottom:10px; padding:10px;">
+                        <div><b>Unidad: ${c.unidad}</b> <span class="tag" style="background:${color}">${min <= 5 ? 'ACTIVO' : 'OFFLINE'}</span><br><small>${c.empresa_nombre}</small></div>
+                        <div style="margin-top:10px;"><button class="tag" style="background:var(--primary)" onclick="validarUnidad('${id}')">Validar</button><button class="tag" style="background:var(--warning)" onclick="actualizarUnidad('${id}')">Actualizar</button><button class="tag" style="background:var(--danger)" onclick="borrarUnidad('${id}')">Borrar</button></div></div>`;
                 });
             });
         }
 
-        // Lógica de Gestión y Generación de QR Dinámico
-        function registrarUnidad() {
-            const unidad = prompt("Número de Unidad:");
-            const empresa = prompt("Cooperativa:");
-            if(unidad && empresa) db.ref('conductores_autorizados/' + Date.now()).set({ unidad, empresa_nombre: empresa, estado: 'validada' });
+        // LÓGICA DE ACTUALIZACIÓN: DESCARGA Y LIMPIEZA DE INACTIVOS[cite: 3, 5]
+        function descargarReporteYActualizarRealidad() {
+            db.ref('buses').once('value', snap => {
+                const data = [];
+                const promesasLimpieza = [];
+                const ahora = Date.now();
+
+                snap.forEach(child => {
+                    const b = child.val();
+                    const min = (ahora - (b.timestamp || b.ultima_actualizacion)) / 60000;
+                    
+                    // Solo incluimos en el Excel a los que estaban activos (últimos 10 min)
+                    if (min <= 10) {
+                        data.push({ 
+                            Unidad: child.key, 
+                            Estado: "Transmitiendo", 
+                            Ultima_Conexion: new Date(b.timestamp || ahora).toLocaleString() 
+                        });
+                    }
+
+                    // Limpiamos del radar los que tienen más de 5 min de inactividad
+                    if (min > 5) {
+                        promesasLimpieza.push(db.ref(`buses/${child.key}`).remove());
+                    }
+                });
+
+                if (data.length > 0) {
+                    const ws = XLSX.utils.json_to_sheet(data);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, "Flota_Activa");
+                    XLSX.writeFile(wb, `Reporte_Realidad_MyTuc_${new Date().toLocaleDateString()}.xlsx`);
+                    
+                    Promise.all(promesasLimpieza).then(() => {
+                        alert("Excel generado. El radar ha sido actualizado limpiando unidades inactivas.");
+                    });
+                } else {
+                    alert("No hay unidades activas para reportar.");
+                }
+            });
         }
 
-        function validarUnidad(id) { db.ref('conductores_autorizados/' + id).update({ estado: 'validada' }); alert("Unidad Validada"); }
+        function registrarUnidad() { const u = prompt("Unidad:"), e = prompt("Coop:"); if(u && e) db.ref('conductores_autorizados/' + Date.now()).set({ unidad: u, empresa_nombre: e, estado: 'validada' }); }
+        function validarUnidad(id) { db.ref('conductores_autorizados/' + id).update({ estado: 'validada' }); alert("Validada"); }
         function borrarUnidad(id) { if(confirm("¿Eliminar?")) db.ref('conductores_autorizados/' + id).remove(); }
         function actualizarUnidad(id) { const n = prompt("Nuevo número:"); if(n) db.ref('conductores_autorizados/' + id).update({ unidad: n }); }
-
-        function generarQR(archivo) {
-            const ruta = window.location.href.substring(0, window.location.href.lastIndexOf('/')) + '/' + archivo;
-            window.open(`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(ruta)}`, '_blank');
-        }
-
-        function nuevaEmpresa() { const n = prompt("Nombre Cooperativa:"); if(n) db.ref('empresas/' + Date.now()).set({ nombre: n }); }
+        function generarQR(archivo) { window.open(`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(window.location.href.substring(0, window.location.href.lastIndexOf('/')) + '/' + archivo)}`, '_blank'); }
+        function nuevaEmpresa() { const n = prompt("Nombre:"); if(n) db.ref('empresas/' + Date.now()).set({ nombre: n }); }
         db.ref('empresas').on('value', snap => {
             const list = document.getElementById('listEmpresas'); list.innerHTML = "";
             snap.forEach(child => { list.innerHTML += `<div class="list-item"><b>${child.val().nombre}</b> <button onclick="db.ref('empresas/${child.key}').remove()" class="tag" style="background:red; float:right;">X</button></div>`; });
