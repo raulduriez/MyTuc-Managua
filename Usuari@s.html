@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyBus - Inicio Limpio</title>
+    <title>MyBus - Sistema de Triangulación Profesional</title>
 
-    <!-- Leaflet & Search Plugin -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-search@3.0.2/dist/leaflet-search.min.css" />
     
@@ -20,17 +19,17 @@
 
         body { margin: 0; font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; overflow: hidden; background: #f4f7f6; }
 
-        /* 1. CUADRO DE DIALOGO INICIAL (REQUISITOS) */
+        /* MODAL DE REGISTRO Y PERMISOS */
         #modal-registro {
             position: fixed; inset: 0; background: var(--azul-oscuro);
             display: flex; justify-content: center; align-items: center; z-index: 9999;
         }
         .form-registro {
-            background: white; padding: 40px; border-radius: 20px; width: 350px; text-align: center;
-            border-top: 8px solid var(--celeste);
+            background: white; padding: 40px; border-radius: 20px; width: 360px; text-align: center;
+            border-top: 8px solid var(--celeste); box-shadow: 0 10px 25px rgba(0,0,0,0.3);
         }
 
-        /* 2. PANEL LATERAL (SIDEBAR) */
+        /* SIDEBAR */
         .sidebar { width: 380px; background: white; display: flex; flex-direction: column; border-right: 1px solid #ddd; z-index: 1000; }
         .sidebar-content { padding: 20px; flex: 1; overflow-y: auto; }
 
@@ -40,50 +39,52 @@
         /* BUSCADOR MANUAL */
         #search-wrapper { 
             background: #eef7ff; border: 2px solid var(--celeste); border-radius: 8px; 
-            min-height: 45px; display: flex; align-items: center;
+            min-height: 50px; display: flex; align-items: center; overflow: hidden;
         }
         .leaflet-control-search { width: 100% !important; margin: 0 !important; background: transparent !important; border: none !important; box-shadow: none !important; }
-        .leaflet-control-search .search-input { width: 90% !important; border: none !important; padding: 10px !important; outline: none !important; }
+        .leaflet-control-search .search-input { 
+            display: block !important; width: 100% !important; border: none !important; 
+            padding: 12px !important; outline: none !important; font-size: 1rem !important;
+        }
 
         .btn-main { width: 100%; padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: 0.3s; }
         .btn-auto { background: var(--azul-deep); color: white; margin-bottom: 10px; }
 
-        #map { flex: 1; z-index: 1; }
+        #map { flex: 1; z-index: 1; background: #e5e3df; }
 
-        /* ICONOS Y ETIQUETAS */
-        .stop-label { background: white; border: 2px solid var(--azul-deep); border-radius: 50%; text-align: center; font-weight: bold; font-size: 11px; line-height: 24px; width: 26px; height: 26px; }
-        .info-panel { font-size: 0.9rem; color: #333; margin-top: 10px; }
+        .stop-label { background: white; border: 2px solid var(--azul-deep); border-radius: 50%; text-align: center; font-weight: bold; font-size: 11px; line-height: 24px; width: 26px; height: 26px; color: black; }
+        .info-panel { font-size: 0.9rem; color: #333; margin-top: 10px; line-height: 1.4; }
     </style>
 </head>
 <body>
 
-<!-- Pantalla de Bienvenida y Requisitos -->
 <div id="modal-registro">
     <div class="form-registro">
         <img src="img/logo2.jpeg" alt="MyBus" style="width: 140px; margin-bottom: 20px;">
-        <h2>Registro</h2>
-        <input type="tel" id="user-phone" placeholder="Número de Teléfono" style="width:100%; padding:12px; margin-bottom:20px; border-radius:5px; border:1px solid #ccc;">
-        <button class="btn-main btn-auto" onclick="iniciarSistema()">ACTIVAR GPS Y ENTRAR</button>
+        <h2>Acceso MyBus</h2>
+        <p style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">Se requiere tu número y autorización de GPS para triangular paradas.</p>
+        <input type="tel" id="user-phone" placeholder="Número de Teléfono" style="width:100%; padding:14px; margin-bottom:20px; border-radius:8px; border:1px solid #ccc; font-size: 1rem;">
+        <button class="btn-main btn-auto" onclick="autorizarYEntrar()">PERMITIR GPS Y ENTRAR</button>
     </div>
 </div>
 
 <aside class="sidebar">
     <div class="sidebar-content">
         <div class="section-box">
-            <h3>Búsqueda Automática</h3>
-            <button class="btn-main btn-auto" onclick="autoTriangular()">PARADA CERCANA (500M)</button>
+            <h3>Detección Automática</h3>
+            <button class="btn-main btn-auto" onclick="triangularMasCercana()">BUSCAR PARADA (500M)</button>
         </div>
 
         <div class="section-box">
-            <h3>Búsqueda Manual (Escribir)</h3>
+            <h3>Consulta Manual (Escribir)</h3>
             <div id="search-wrapper"></div>
             <div id="info-manual" class="info-panel"></div>
         </div>
 
         <div class="section-box" style="border-left: 5px solid var(--verde-neon);">
-            <h3>Buses en Rango Real</h3>
+            <h3>Buses en Rango</h3>
             <div id="lista-buses" class="info-panel">
-                <p style="color:#999;">Esperando ubicación...</p>
+                <p id="gps-status" style="color:#e74c3c; font-weight: bold;">⚠ GPS NO AUTORIZADO</p>
             </div>
         </div>
     </div>
@@ -93,8 +94,6 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-search@3.0.2/dist/leaflet-search.min.js"></script>
-
-<!-- Tu archivo de paradas de Managua -->
 <script src="PUNTOS_MANAGUA_01052026_1.js"></script>
 
 <script>
@@ -102,76 +101,102 @@
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
     var miUbicacion = null;
-    var userMarker, trianguloLine, capaGeoJSON;
+    var userMarker, lineaTriangulo, capaParadas;
 
-    // Icono Flecha Norte (Rojo)
+    // Icono Norte Rojo (Boceto)
     var norteIcon = L.divIcon({
         className: 'user-icon',
-        html: '<div style="color:red; font-size:35px; transform: rotate(-45deg);">▲</div>',
+        html: '<div style="color:red; font-size:35px; transform: rotate(-45deg); text-shadow: 1px 1px 2px #000;">▲</div>',
         iconSize: [30, 30]
     });
 
-    function iniciarSistema() {
-        if(document.getElementById('user-phone').value.length < 8) return alert("Número inválido");
-        document.getElementById('modal-registro').style.display = 'none';
-        
-        // Activar seguimiento en tiempo real
-        navigator.geolocation.watchPosition(pos => {
-            miUbicacion = [pos.coords.latitude, pos.coords.longitude];
-            if(userMarker) map.removeLayer(userMarker);
-            userMarker = L.marker(miUbicacion, {icon: norteIcon}).addTo(map);
-            if(!map.centrado) { map.setView(miUbicacion, 17); map.centrado = true; }
-        }, null, {enableHighAccuracy: true});
+    // Función principal de entrada
+    function autorizarYEntrar() {
+        const phone = document.getElementById('user-phone').value;
+        if(phone.length < 8) return alert("Por favor, ingresa un número de teléfono válido.");
 
-        inicializarBuscador();
+        // Solicitar GPS explícitamente
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                miUbicacion = [pos.coords.latitude, pos.coords.longitude];
+                document.getElementById('modal-registro').style.display = 'none';
+                configurarMapaInicial();
+                iniciarSeguimientoReal();
+            },
+            (err) => {
+                alert("Error: Debes permitir el acceso al GPS para usar la triangulación.");
+            },
+            { enableHighAccuracy: true }
+        );
     }
 
-    function inicializarBuscador() {
-        // Cargar paradas con círculos numerados
-        capaGeoJSON = L.geoJSON(PUNTOS_MANAGUA_01052026_1, {
+    function configurarMapaInicial() {
+        if(userMarker) map.removeLayer(userMarker);
+        userMarker = L.marker(miUbicacion, {icon: norteIcon}).addTo(map);
+        map.setView(miUbicacion, 17);
+        document.getElementById('gps-status').innerHTML = "✓ GPS ACTIVO";
+        document.getElementById('gps-status').style.color = "green";
+
+        // Cargar Paradas y Buscador inmediatamente después de entrar
+        inicializarComponentes();
+    }
+
+    function iniciarSeguimientoReal() {
+        navigator.geolocation.watchPosition(pos => {
+            miUbicacion = [pos.coords.latitude, pos.coords.longitude];
+            userMarker.setLatLng(miUbicacion);
+        }, null, { enableHighAccuracy: true });
+    }
+
+    function inicializarComponentes() {
+        // Cargar Capa de Paradas
+        capaParadas = L.geoJSON(PUNTOS_MANAGUA_01052026_1, {
             pointToLayer: (feature, latlng) => L.marker(latlng, {
-                icon: L.divIcon({ className: 'stop-label', html: `<div>${feature.properties.NUM_PARADA || 'P'}</div>` })
+                icon: L.divIcon({ 
+                    className: 'stop-label', 
+                    html: `<div>${feature.properties.NUM_PARADA || 'P'}</div>` 
+                })
             })
         }).addTo(map);
 
-        // Configurar buscador manual escribible
+        // Inicializar Buscador Manual en el Sidebar
         var searchControl = new L.Control.Search({
             container: 'search-wrapper',
-            layer: capaGeoJSON,
+            layer: capaParadas,
             propertyName: 'name',
             marker: false,
             initial: false,
             collapsed: false,
-            textPlaceholder: 'Buscar parada...',
+            textPlaceholder: 'Escriba nombre de parada...',
             moveToLocation: (latlng, title) => ejecutarTriangulacion([latlng.lat, latlng.lng], title)
         });
         map.addControl(searchControl);
     }
 
     function ejecutarTriangulacion(destino, nombre) {
-        if(!miUbicacion) return;
-        if(trianguloLine) map.removeLayer(trianguloLine);
+        if(!miUbicacion) return alert("Esperando señal de GPS...");
+        if(lineaTriangulo) map.removeLayer(lineaTriangulo);
 
-        // Línea descontinua de triangulación
-        trianguloLine = L.polyline([miUbicacion, destino], {
+        // Línea descontinua (Triangulación Usuario -> Parada)
+        lineaTriangulo = L.polyline([miUbicacion, destino], {
             color: '#004e92', weight: 3, dashArray: '10, 15'
         }).addTo(map);
 
         let distancia = map.distance(miUbicacion, destino);
-        map.fitBounds(trianguloLine.getBounds(), {padding: [50, 50]});
+        map.fitBounds(lineaTriangulo.getBounds(), {padding: [50, 50]});
 
-        document.getElementById('info-manual').innerHTML = `<b>${nombre}</b><br>Distancia: ${distancia.toFixed(0)}m`;
-
-        // Lógica de 500 metros
-        let listBus = document.getElementById('lista-buses');
+        // Actualizar UI
+        document.getElementById('info-manual').innerHTML = `<b>${nombre}</b><br>Distancia: ${distancia.toFixed(0)} metros`;
+        
+        const listaBuses = document.getElementById('lista-buses');
         if(distancia <= 500) {
-            listBus.innerHTML = `<b style="color:green;">✓ EN RANGO</b><br>Bus 102: 4 min<br>Bus 110: 9 min`;
+            listaBuses.innerHTML = `<b style="color:green;">✓ EN RANGO (500m)</b><br>Bus 102: 3 min<br>Bus 110: 7 min`;
         } else {
-            listBus.innerHTML = `<b style="color:red;">FUERA DE RANGO (500m)</b>`;
+            listaBuses.innerHTML = `<b style="color:red;">FUERA DE RANGO (>500m)</b><br>Distancia actual: ${distancia.toFixed(0)}m`;
         }
     }
 
-    function autoTriangular() {
+    function triangularMasCercana() {
         if(!miUbicacion) return;
         let dMin = Infinity, closest = null;
 
@@ -184,7 +209,7 @@
         if(closest && dMin <= 500) {
             ejecutarTriangulacion(closest.coords, closest.name);
         } else {
-            alert("No hay paradas a menos de 500m.");
+            alert("No se encontraron paradas en el radio de 500 metros.");
         }
     }
 </script>
