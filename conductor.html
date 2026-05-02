@@ -3,70 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyTuc | Acceso Usuarios</title>
+    <title>MyTuc | Panel Conductor</title>
+    
+    <!-- Librerías Externas -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
     <style>
         :root {
             --bg-dark: #070b12;
-            --accent: #00e5ff; /* Cian espacial */
-            --glow: #7000ff;   /* Púrpura neón */
+            --accent: #ff3d00; /* Color naranja para diferenciar conductor */
+            --glow: #7000ff;
+            --azul-deep: #004e92;
         }
 
         body {
             margin: 0;
-            height: 100vh;
+            min-height: 100vh;
+            background: radial-gradient(circle at center, var(--azul-deep), var(--bg-dark)) !important;
+            font-family: 'Segoe UI', sans-serif;
+            color: white;
             display: flex;
             justify-content: center;
             align-items: center;
-            background: var(--bg-dark);
-            font-family: 'Segoe UI', sans-serif;
             overflow: hidden;
         }
 
-        /* Contenedor del Logo con Giro Espacial */
+        /* --- ESTILO PORTAL CIRCULAR --- */
+        #portalConductor {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: 0.5s;
+        }
+
         .portal-container {
             position: relative;
-            width: 250px;
-            height: 250px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            width: 250px; height: 250px;
+            display: flex; justify-content: center; align-items: center;
             cursor: pointer;
         }
 
-        /* El círculo con efecto de colores recorriendo el borde */
         .space-ring {
             position: absolute;
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
             border-radius: 50%;
             background: conic-gradient(from 0deg, transparent, var(--accent), var(--glow), transparent);
             animation: spin 1.5s linear infinite;
-            filter: drop-shadow(0 0 15px var(--accent));
+            filter: drop-shadow(0 0 20px var(--accent));
         }
 
         .space-ring::after {
             content: '';
-            position: absolute;
-            inset: 6px;
+            position: absolute; inset: 8px;
             background: var(--bg-dark);
             border-radius: 50%;
         }
 
-        @keyframes spin {
-            100% { transform: rotate(360deg); }
-        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
 
-        /* Logo Central */
         .logo-central {
-            width: 180px;
-            height: 180px;
+            width: 180px; height: 180px;
             border-radius: 50%;
             z-index: 10;
             object-fit: cover;
-            border: 2px solid rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
         }
 
-        /* Modal de Entrada */
+        /* --- MODAL Y PANEL DE CONTROL --- */
         .access-card {
             display: none;
             position: fixed;
@@ -81,37 +87,45 @@
             box-shadow: 0 20px 50px rgba(0,0,0,0.8);
         }
 
-        .access-card h2 { color: white; margin-top: 0; font-size: 1.3rem; }
-        
-        .input-group {
-            background: rgba(0,0,0,0.3);
-            border-radius: 12px;
-            padding: 10px;
-            margin: 20px 0;
-            border: 1px solid #333;
-        }
-
-        .input-group input {
-            background: transparent;
-            border: none;
-            color: var(--accent);
-            width: 100%;
+        #panelTransmision {
+            display: none;
+            width: 90%;
+            max-width: 400px;
+            background: rgba(10, 14, 20, 0.95);
+            border-radius: 30px;
+            padding: 30px;
+            border: 1px solid var(--accent);
             text-align: center;
-            font-size: 1.2rem;
-            outline: none;
         }
 
-        .btn-enter {
-            background: var(--accent);
-            color: #000;
-            width: 100%;
+        .status-box {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
             padding: 15px;
-            border-radius: 12px;
-            border: none;
+            margin: 20px 0;
+            border-left: 5px solid var(--accent);
+        }
+
+        .btn-transmitir {
+            background: var(--accent);
+            color: white;
             font-weight: bold;
-            font-size: 1rem;
-            cursor: pointer;
+            border: none;
+            border-radius: 15px;
+            padding: 15px;
+            width: 100%;
+            font-size: 1.1rem;
             transition: 0.3s;
+        }
+
+        .active-pulse {
+            animation: pulse-green 1.5s infinite;
+            background: #2ecc71 !important;
+        }
+
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0px rgba(46, 204, 113, 0.7); }
+            100% { box-shadow: 0 0 0 15px rgba(46, 204, 113, 0); }
         }
 
         #overlay {
@@ -126,41 +140,108 @@
 </head>
 <body>
 
-    <div class="portal-container" onclick="abrirPortal()">
-        <div class="space-ring"></div>
-        <img src="img/Logo.jpeg" class="logo-central" alt="Logo MyTuc">
+    <!-- VISTA 1: PORTAL DE ENTRADA -->
+    <div id="portalConductor" onclick="abrirPortal()">
+        <div class="portal-container">
+            <div class="space-ring"></div>
+            <img src="img/Logo.jpeg" class="logo-central" alt="Logo MyTuc">
+        </div>
+        <h2 class="mt-4 fw-bold">PANEL CONDUCTOR</h2>
+        <p class="opacity-50">Toca el logo para identificarte</p>
     </div>
 
     <div id="overlay"></div>
 
+    <!-- VISTA 2: FORMULARIO DE ACCESO -->
     <div id="modalAcceso" class="access-card">
         <h2>IDENTIFICACIÓN</h2>
-        <p style="color: #9ca3af; font-size: 0.9rem;">Ingrese su número para rastrear su ruta en tiempo real.</p>
-        
-        <div class="input-group">
-            <input type="tel" id="userPhone" placeholder="8888-8888" maxlength="8">
+        <p style="color: #9ca3af; font-size: 0.9rem;">Ingrese el número de unidad asignado.</p>
+        <div class="mb-3">
+            <input type="text" id="busId" class="form-control bg-dark text-white text-center border-secondary fs-4" placeholder="Ej: 210-01">
         </div>
+        <button class="btn-transmitir" onclick="validarAcceso()">ACCEDER AL PANEL</button>
+    </div>
 
-        <button class="btn-enter" onclick="concederAcceso()">
-            <i class="fas fa-location-arrow"></i> ACTIVAR RADAR
+    <!-- VISTA 3: PANEL DE TRANSMISIÓN GPS -->
+    <div id="panelTransmision">
+        <h3 class="fw-bold text-uppercase mb-3">Transmisión en Vivo</h3>
+        <div class="status-box text-start">
+            <p class="mb-1 small opacity-50">ESTADO DEL SISTEMA:</p>
+            <div id="statusText" class="fw-bold text-warning">GPS Inactivo</div>
+            <hr class="my-2 opacity-10">
+            <p class="mb-1 small opacity-50">COORDENADAS:</p>
+            <div id="coordsText" class="small">0.0000, 0.0000</div>
+        </div>
+        <button id="btnGps" class="btn-transmitir" onclick="toggleTransmision()">
+            <i class="fas fa-satellite-dish"></i> INICIAR RUTA
         </button>
+        <button class="btn btn-link text-white-50 mt-3" onclick="location.reload()">Cerrar Sesión</button>
     </div>
 
     <script>
+        // CONFIGURACIÓN FIREBASE
+        const firebaseConfig = { 
+            apiKey: "AIzaSyDGBkCnWppaprzs2gUkTj16nk6WOiLn5yQ", 
+            databaseURL: "https://bus-tracker-managua-default-rtdb.firebaseio.com" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let watchId = null;
+        let activo = false;
+
         function abrirPortal() {
             document.getElementById('modalAcceso').style.display = 'block';
             document.getElementById('overlay').style.display = 'block';
         }
 
-        function concederAcceso() {
-            const tel = document.getElementById('userPhone').value;
-            if(tel.length >= 8) {
-                // Guardamos el teléfono para que el radar lo lea automáticamente
-                localStorage.setItem('myBus_phone', tel);
-                // Redirigimos a la página del mapa[cite: 3]
-                window.location.href = "radar.html?start=true";
+        function validarAcceso() {
+            const id = document.getElementById('busId').value;
+            if(id.length >= 3) {
+                document.getElementById('modalAcceso').style.display = 'none';
+                document.getElementById('overlay').style.display = 'none';
+                document.getElementById('portalConductor').style.display = 'none';
+                document.getElementById('panelTransmision').style.display = 'block';
             } else {
-                alert("Por favor, ingrese un número válido.");
+                alert("Ingrese un ID de unidad válido.");
+            }
+        }
+
+        function toggleTransmision() {
+            const id = document.getElementById('busId').value;
+            const btn = document.getElementById('btnGps');
+            const status = document.getElementById('statusText');
+
+            if (!activo) {
+                if ("geolocation" in navigator) {
+                    activo = true;
+                    btn.innerHTML = '<i class="fas fa-stop-circle"></i> DETENER RUTA';
+                    btn.classList.add('active-pulse');
+                    status.innerText = "TRANSMITIENDO...";
+                    status.className = "fw-bold text-success";
+
+                    watchId = navigator.geolocation.watchPosition(pos => {
+                        const lat = pos.coords.latitude;
+                        const lng = pos.coords.longitude;
+                        document.getElementById('coordsText').innerText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+
+                        // Actualizar Firebase
+                        db.ref(`buses/${id}`).set({
+                            lat: lat,
+                            lng: lng,
+                            timestamp: Date.now(),
+                            unidad: id
+                        });
+                    }, null, { enableHighAccuracy: true });
+                }
+            } else {
+                activo = false;
+                navigator.geolocation.clearWatch(watchId);
+                db.ref(`buses/${id}`).remove();
+                btn.innerHTML = '<i class="fas fa-satellite-dish"></i> INICIAR RUTA';
+                btn.classList.remove('active-pulse');
+                status.innerText = "GPS Inactivo";
+                status.className = "fw-bold text-warning";
             }
         }
     </script>
