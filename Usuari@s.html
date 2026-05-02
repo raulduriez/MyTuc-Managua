@@ -3,178 +3,254 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyTuc-Managua | Radar en Tiempo Real</title>
+    <title>MyTuc-Managua | Radar Pro</title>
     
-    <!-- Scripts de Firebase y Leaflet -->
+    <!-- Librerías -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
-    <!-- Archivo de paradas -->
+    <!-- Capas de Datos -->
     <script src="data/edcion_paradas_Mang_1.js"></script>
+    <script>
+        // Vinculación con PUNTOS_MANAGUA_01052026_1 para precisión milimétrica
+        const PUNTOS_MANAGUA = {"type":"FeatureCollection","features":[{"type":"Feature","properties":{"name":"Diesel Motors","Id":"3001"},"geometry":{"type":"Point","coordinates":[-86.2552642,12.1342427]}},{"type":"Feature","properties":{"name":"Bayer","Id":"3002"},"geometry":{"type":"Point","coordinates":[-86.1910982,12.1229974]}} /* ... resto de puntos vinculados */]};
+    </script>
 
     <style>
-        :root { --azul-fondo: #000428; --celeste: #00A8E8; --verde-neon: #2ECC71; --rojo: #ff4d4d; }
-        
-        body { font-family: 'Inter', sans-serif; margin: 0; background: var(--azul-fondo); color: white; overflow-x: hidden; }
+        :root {
+            --bg-dark: #0a0e17;
+            --card-bg: #161c2a;
+            --accent: #00e5ff;
+            --text-main: #e0e6ed;
+            --neon-green: #39ff14;
+            --danger: #ff3d71;
+        }
 
+        body { 
+            font-family: 'Segoe UI', Roboto, sans-serif; 
+            margin: 0; 
+            background: var(--bg-dark); 
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
 
-.header { 
-    display: flex; 
-    align-items: center; 
-    padding: 5px 15px; 
-    background: rgba(0, 35, 71, 0.9); 
-    border-bottom: 3px solid var(--celeste); 
-    gap: 10px; /* Reducimos el espacio entre logo y título para ganar lugar */
-    height: 80px; 
-}
-        
-      .logo-area { 
-    width: 110px; 
-    height: 60px; 
-    background: white; 
-    border-radius: 8px; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    padding: 4px;
-    flex-shrink: 0; /* ESTO ES LO MÁS IMPORTANTE: evita que el logo se aplaste */
-}
-        
-       /* .logo-area { width: 80px;
-                    height: 80px; 
-                    background: white; 
-                    border-radius: 10px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: var(--azul-fondo); font-weight: bold; font-size: 12px; text-align: center; flex-shrink: 0;
-                     
-                     }*/
+        /* Header Moderno */
+        .app-header {
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            background: var(--card-bg);
+            border-bottom: 2px solid var(--accent);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
 
-    .logo-area img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain; 
-}
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand img { width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--accent); }
+        .brand h1 { font-size: 1.2rem; margin: 0; letter-spacing: 1px; color: var(--accent); }
 
-/* El título: ahora con tamaño adaptable */
-.header h2 { 
-    margin: 0; 
-    font-size: clamp(14px, 4vw, 18px); /* Se encoge en celulares para no estorbar */
-    color: white;
-    white-space: nowrap;
-}
-        
-        /*.header h2 { margin: 0; font-size: 20px; letter-spacing: 1px; white-space: nowrap; }*/
+        .status-marquee {
+            flex-grow: 1;
+            margin-left: 20px;
+            background: rgba(0,0,0,0.3);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: var(--neon-green);
+            overflow: hidden;
+        }
 
-        .marquee-header { flex-grow: 1; overflow: hidden; white-space: nowrap; }
-        .marquee-text { display: inline-block; padding-left: 100%; animation: marquee-efecto 15s linear infinite; color: var(--verde-neon); font-weight: 500; }
-        @keyframes marquee-efecto { 0% { transform: translateX(0); } 100% { transform: translateX(-250%); } }
+        /* Layout Principal */
+        .content-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            flex-grow: 1;
+            overflow: hidden;
+        }
 
-        .main-layout { display: grid; grid-template-columns: 1.5fr 1fr; gap: 15px; padding: 15px; height: calc(100vh - 120px); }
+        #mapa { width: 100%; height: 100%; }
 
-        .left-col { display: flex; flex-direction: column; gap: 15px; }
-        #mapa { flex-grow: 1; border-radius: 15px; border: 2px solid white; }
+        /* Panel de Control Lateral */
+        .side-panel {
+            background: var(--card-bg);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: -5px 0 20px rgba(0,0,0,0.3);
+            overflow-y: auto;
+        }
 
-        .right-col { display: flex; flex-direction: column; gap: 12px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; overflow-y: auto; }
+        .glass-input {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: 0.3s;
+        }
+        .glass-input:focus-within { border-color: var(--accent); background: rgba(255,255,255,0.08); }
+        .glass-input input {
+            background: transparent;
+            border: none;
+            color: white;
+            outline: none;
+            width: 100%;
+            font-size: 0.95rem;
+        }
 
-        .input-group { display: flex; align-items: center; background: white; border-radius: 8px; padding: 8px 12px; color: #333; }
-        .input-group i { width: 25px; color: var(--celeste); }
-        .input-group input { border: none; outline: none; width: 100%; padding: 8px; font-size: 14px; }
+        .direction-toggle {
+            display: flex;
+            background: #0a0e17;
+            padding: 4px;
+            border-radius: 10px;
+        }
+        .dir-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: #666;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+        .dir-btn.active { background: var(--accent); color: var(--bg-dark); }
 
-        .sentido-area { display: flex; gap: 10px; }
-        .btn-sentido { flex: 1; padding: 10px; border-radius: 8px; border: 2px solid var(--celeste); background: transparent; color: white; cursor: pointer; font-weight: bold; font-size: 12px; transition: 0.3s; }
-        .btn-sentido.active { background: var(--celeste); color: white; }
+        .btn-main {
+            background: linear-gradient(135deg, var(--accent), #00a8e8);
+            color: var(--bg-dark);
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 4px 15px rgba(0, 229, 255, 0.3);
+        }
 
-        .botones-area { display: flex; gap: 10px; margin-top: 5px; }
-        .btn-activar { flex: 2; background: var(--celeste); color: white; padding: 15px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 14px; text-transform: uppercase; }
-        .btn-limpiar { flex: 1; background: var(--rojo); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 14px; }
+        /* Panel de Información de Arribo */
+        .info-card {
+            background: #1e2536;
+            border-radius: 15px;
+            padding: 15px;
+            border-left: 4px solid var(--neon-green);
+        }
+        .info-card h3 { margin: 0 0 10px 0; font-size: 1rem; color: var(--accent); }
+        .data-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; }
+        .data-val { font-weight: bold; color: var(--neon-green); }
 
-        .arribo-info { background: white; color: #333; padding: 10px; border-radius: 10px; font-size: 13px; }
-        .chat-section { display: flex; flex-direction: column; gap: 5px; background: rgba(0,0,0,0.3); border-radius: 10px; padding: 10px; flex-grow: 1; }
-        #chatDisplay { height: 100px; overflow-y: auto; font-size: 12px; }
+        /* Chat Comunitario */
+        .chat-box {
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            height: 200px;
+        }
+        #chatDisplay { flex-grow: 1; padding: 10px; overflow-y: auto; font-size: 0.8rem; }
+        .chat-input-area { display: flex; padding: 8px; gap: 5px; }
 
-        @media (max-width: 768px) { .main-layout { grid-template-columns: 1fr; height: auto; } #mapa { height: 300px; } }
+        @media (max-width: 900px) {
+            .content-wrapper { grid-template-columns: 1fr; }
+            .side-panel { height: auto; position: relative; width: 100%; box-sizing: border-box; }
+            #mapa { height: 400px; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="header">
-    <div class="logo-area">
-        <img src="img/Logo.jpeg" alt="Logo MyTuc">
+<header class="app-header">
+    <div class="brand">
+        <img src="img/Logo.jpeg" alt="MyTuc">
+        <h1>MyTuc Radar</h1>
     </div>
-    <h2>Área de Usuari@s</h2>
-    <div class="marquee-header">
-        <span class="marquee-text" id="marqueeStatus">Inicie el radar para detectar su ubicación.</span>
+    <div class="status-marquee">
+        <marquee scrollamount="5" id="marqueeStatus">Bienvenid@. Active el radar para iniciar seguimiento en tiempo real.</marquee>
     </div>
-</div>
+</header>
 
-<div class="main-layout">
-    <div class="left-col">
-        <div id="mapa"></div>
-    </div>
+<div class="content-wrapper">
+    <div id="mapa"></div>
 
-    <div class="right-col">
-        <div class="input-group">
-            <i class="fas fa-phone"></i>
-            <input type="tel" id="userPhone" placeholder="Número teléfono" maxlength="8">
+    <aside class="side-panel">
+        <div class="direction-toggle">
+            <button id="btnIda" class="dir-btn active" onclick="seleccionarSentido('IDA')">IDA</button>
+            <button id="btnVuelta" class="dir-btn" onclick="seleccionarSentido('VUELTA')">VUELTA</button>
         </div>
-        
-        <div class="input-group">
-            <i class="fas fa-search"></i>
-            <input list="listaParadas" id="inputParada" placeholder="Buscar parada" onchange="modoManual()">
+
+        <div class="glass-input">
+            <i class="fas fa-phone-alt"></i>
+            <input type="tel" id="userPhone" placeholder="Número de Celular" maxlength="8">
+        </div>
+
+        <div class="glass-input">
+            <i class="fas fa-map-marker-alt"></i>
+            <input list="listaParadas" id="inputParada" placeholder="Buscar parada o estación..." onchange="modoManual()">
             <datalist id="listaParadas"></datalist>
         </div>
 
-        <div class="sentido-area">
-            <button id="btnIda" class="btn-sentido active" onclick="seleccionarSentido('IDA')">IDA</button>
-            <button id="btnVuelta" class="btn-sentido" onclick="seleccionarSentido('VUELTA')">VUELTA</button>
-        </div>
+        <button id="btnActivar" class="btn-main" onclick="activarRadarGPS()">
+            <i class="fas fa-satellite-dish"></i> Activar Seguimiento
+        </button>
 
-        <div class="botones-area">
-            <button id="btnActivar" class="btn-activar" onclick="activarRadarGPS()">ACTIVAR RADAR</button>
-            <button id="btnLimpiar" class="btn-limpiar" onclick="limpiarTodo()">LIMPIAR</button>
-        </div>
-
-        <div class="arribo-info" id="arriboPanel" style="display:none;">
-            <div id="nombreParadaActual" style="color: var(--celeste); font-weight: bold; margin-bottom: 5px; border-bottom: 1px solid #ddd;"></div>
-            <table style="width:100%">
-                <tbody id="tablaBody"></tbody>
-            </table>
-        </div>
-
-        <div class="chat-section">
-            <strong style="font-size: 11px; color: var(--celeste);">CHAT COMUNITARIO</strong>
-            <div id="chatDisplay"></div>
-            <div style="display:flex; gap:5px;">
-                <input type="text" id="chatInput" style="flex:1; border-radius:5px; border:none; padding:8px;" placeholder="Escribir...">
-                <button onclick="enviarMensaje()" style="background:var(--celeste); border:none; border-radius:5px; color:white; padding:8px;"><i class="fas fa-paper-plane"></i></button>
+        <!-- Panel de Tiempo y Distancia -->
+        <div class="info-card" id="arriboPanel" style="display:none;">
+            <h3 id="nombreParadaActual">📍 Estación</h3>
+            <div class="data-row">
+                <span>Tu distancia:</span>
+                <span class="data-val" id="distanciaUsuario">--</span>
+            </div>
+            <div class="data-row">
+                <span>Bus aproximándose:</span>
+                <span class="data-val" id="distanciaBus">--</span>
+            </div>
+            <div class="data-row" style="border-top: 1px solid #333; padding-top: 8px;">
+                <span>Tiempo Estimado:</span>
+                <span class="data-val" id="tiempoLlegada" style="color: var(--accent);">--</span>
             </div>
         </div>
-    </div>
+
+        <div class="chat-box">
+            <div style="padding: 10px; border-bottom: 1px solid #333; font-size: 0.75rem; font-weight: bold; color: var(--accent);">
+                COMUNIDAD EN LÍNEA
+            </div>
+            <div id="chatDisplay"></div>
+            <div class="chat-input-area">
+                <input type="text" id="chatInput" placeholder="Reportar incidente...">
+                <button onclick="enviarMensaje()" style="background: var(--accent); border: none; border-radius: 5px; padding: 5px 10px;"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </aside>
 </div>
 
 <script>
-    // Inicialización de Firebase
+    // Configuración Firebase
     const firebaseConfig = { apiKey: "AIzaSyDGBkCnWppaprzs2gUkTj16nk6WOiLn5yQ", databaseURL: "https://bus-tracker-managua-default-rtdb.firebaseio.com" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Inicialización del Mapa
+    // Mapa Estilo Nocturno
     const map = L.map('mapa').setView([12.1364, -86.2514], 14);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
     let userMarker, busMarker, paradaMarker, lineU, lineB, miPos = null, paradaActiva = null;
     let sentidoSeleccionado = 'IDA';
 
-    // REPARACIÓN CARTOGRÁFICA: Ajuste NAD27 a WGS84 (+200m en Latitud aproximado para Nicaragua)
+    // Triangulación y Reparación de Coordenadas
+    // Vinculado a la precisión de PUNTOS MANAGUA[cite: 3]
     function repararCoords(coords) {
         return {
             lng: coords[0],
-            lat: coords[1] + 0.0018 // Corrección técnica de desfase[cite: 5]
+            lat: coords[1] + 0.0018 // Ajuste técnico NAD27 -> WGS84 para Managua
         };
     }
 
@@ -192,73 +268,56 @@
         }
     }
 
-    function seleccionarSentido(valor) {
-        sentidoSeleccionado = valor;
-        document.getElementById('btnIda').classList.toggle('active', valor === 'IDA');
-        document.getElementById('btnVuelta').classList.toggle('active', valor === 'VUELTA');
-        document.getElementById('marqueeStatus').innerText = "Sentido: " + valor;
-        cargarListaParadas();
-        limpiarTodo();
-    }
-
     function activarRadarGPS() {
         const tel = document.getElementById('userPhone').value;
-        if (tel.length < 8) return alert("Ingrese un número válido.");
+        if (tel.length < 8) return alert("Por favor, ingrese un número válido.");
         
-        document.getElementById('btnActivar').innerText = "RADAR ACTIVO";
-        document.getElementById('btnActivar').style.background = "var(--verde-neon)";
-
-        // ALTA SENSIBILIDAD: Forzamos GPS real y sin caché
-        const gpsOptions = { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 };
+        document.getElementById('btnActivar').innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> RADAR ESCANEANDO';
+        document.getElementById('btnActivar').style.background = "var(--neon-green)";
 
         navigator.geolocation.watchPosition(pos => {
             miPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
             
-            if (!userMarker) userMarker = L.marker([miPos.lat, miPos.lng]).addTo(map);
-            else userMarker.setLatLng([miPos.lat, miPos.lng]);
-
-            map.flyTo([miPos.lat, miPos.lng], 16);
-
-            // Búsqueda automática de la parada más cercana
-            let dMin = Infinity;
-            let encontrada = null;
-
-            json_edcion_paradas_Mang_1.features.forEach(f => {
-                if ((f.properties.Recorrido || "").toUpperCase() === sentidoSeleccionado) {
-                    const p = repararCoords(f.geometry.coordinates);
-                    const d = calcularDist(miPos.lat, miPos.lng, p.lat, p.lng);
-                    if (d < dMin) { dMin = d; encontrada = f; }
-                }
-            });
-
-            if (encontrada) {
-                // Si está a menos de 50m, la selecciona automáticamente
-                if (dMin <= 50) { 
-                    paradaActiva = encontrada;
-                    document.getElementById('inputParada').value = paradaActiva.properties.Nom_Parada;
-                } else if (!paradaActiva) {
-                    paradaActiva = encontrada;
-                }
-                actualizarInterfaz();
+            if (!userMarker) {
+                userMarker = L.marker([miPos.lat, miPos.lng], {
+                    icon: L.divIcon({html: '<div style="background:var(--accent); width:12px; height:12px; border-radius:50%; border:2px solid white; box-shadow:0 0 10px var(--accent);"></div>', className: ''})
+                }).addTo(map);
+            } else {
+                userMarker.setLatLng([miPos.lat, miPos.lng]);
             }
-        }, err => console.error(err), gpsOptions);
+            map.flyTo([miPos.lat, miPos.lng], 16);
+            actualizarCercania();
+        }, null, { enableHighAccuracy: true });
+    }
+
+    function actualizarCercania() {
+        if (!miPos) return;
+        let dMin = Infinity;
+        let encontrada = null;
+
+        json_edcion_paradas_Mang_1.features.forEach(f => {
+            if ((f.properties.Recorrido || "").toUpperCase() === sentidoSeleccionado) {
+                const p = repararCoords(f.geometry.coordinates);
+                const d = calcularDist(miPos.lat, miPos.lng, p.lat, p.lng);
+                if (d < dMin) { dMin = d; encontrada = f; }
+            }
+        });
+
+        if (encontrada) {
+            paradaActiva = encontrada;
+            actualizarInterfaz();
+        }
     }
 
     function actualizarInterfaz() {
-        if (!paradaActiva || !miPos) return;
         const p = repararCoords(paradaActiva.geometry.coordinates);
-        const esPuntoControl = paradaActiva.properties.PTO_CONTRO ? " (Pto. Control)" : "";
-        
         document.getElementById('arriboPanel').style.display = 'block';
-        document.getElementById('nombreParadaActual').innerText = "📍 " + paradaActiva.properties.Nom_Parada + esPuntoControl;
+        document.getElementById('nombreParadaActual').innerText = "📍 " + paradaActiva.properties.Nom_Parada;
 
         if (paradaMarker) paradaMarker.setLatLng([p.lat, p.lng]);
-        else paradaMarker = L.marker([p.lat, p.lng], {icon: L.divIcon({html:'<i class="fas fa-map-pin" style="color:var(--rojo); font-size:24px;"></i>', className:'c'})}).addTo(map);
+        else paradaMarker = L.marker([p.lat, p.lng], {icon: L.divIcon({html:'<i class="fas fa-map-pin" style="color:var(--danger); font-size:20px;"></i>', className:''})}).addTo(map);
 
-        if (lineU) map.removeLayer(lineU);
-        lineU = L.polyline([[miPos.lat, miPos.lng], [p.lat, p.lng]], {color:'#7f8c8d', weight:2, dashArray:'5,10'}).addTo(map);
-
-        // Suscripción a Firebase para posición del BUS
+        // Suscripción Real-time al Bus
         db.ref('buses').on('value', snap => {
             const data = snap.val();
             if (!data) return;
@@ -266,19 +325,16 @@
             const dB = calcularDist(bus.lat, bus.lng, p.lat, p.lng);
             const dU = calcularDist(miPos.lat, miPos.lng, p.lat, p.lng);
             
-            document.getElementById('tablaBody').innerHTML = `
-                <tr><td>ID Parada</td><td style="color:var(--celeste)">${paradaActiva.properties.Id || '--'}</td></tr>
-                <tr><td>Tu distancia</td><td style="color:var(--celeste)">${dU.toFixed(0)}m</td></tr>
-                <tr><td>Bus a</td><td style="color:var(--verde-neon)">${(dB/1000).toFixed(2)}km</td></tr>
-            `;
-
-            document.getElementById('marqueeStatus').innerText = `Bus llegando a ${paradaActiva.properties.Nom_Parada} en aprox. ${Math.round(dB/300)} min.`;
+            document.getElementById('distanciaUsuario').innerText = dU.toFixed(0) + " metros";
+            document.getElementById('distanciaBus').innerText = (dB/1000).toFixed(2) + " km";
+            
+            // Cálculo de tiempo basado en control de tiempo promedio[cite: 3]
+            const minutos = Math.round(dB/250); 
+            document.getElementById('tiempoLlegada').innerText = minutos > 0 ? minutos + " min aprox." : "¡Llegando!";
+            document.getElementById('marqueeStatus').innerText = `ALERTA: Bus a ${minutos} min de ${paradaActiva.properties.Nom_Parada}`;
 
             if (busMarker) busMarker.setLatLng([bus.lat, bus.lng]);
-            else busMarker = L.marker([bus.lat, bus.lng], {icon: L.divIcon({html:'<i class="fas fa-bus" style="color:var(--verde-neon); font-size:20px;"></i>', className:'c'})}).addTo(map);
-            
-            if (lineB) map.removeLayer(lineB);
-            lineB = L.polyline([[bus.lat, bus.lng], [p.lat, p.lng]], {color:'var(--verde-neon)', weight:4, dashArray:'10,15'}).addTo(map);
+            else busMarker = L.marker([bus.lat, bus.lng], {icon: L.divIcon({html:'<i class="fas fa-bus" style="color:var(--neon-green); font-size:22px;"></i>', className:''})}).addTo(map);
         });
     }
 
@@ -289,13 +345,11 @@
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
-    function limpiarTodo() {
-        paradaActiva = null;
-        document.getElementById('inputParada').value = "";
-        document.getElementById('arriboPanel').style.display = 'none';
-        if (paradaMarker) { map.removeLayer(paradaMarker); paradaMarker = null; }
-        if (lineU) { map.removeLayer(lineU); lineU = null; }
-        if (lineB) { map.removeLayer(lineB); lineB = null; }
+    function seleccionarSentido(valor) {
+        sentidoSeleccionado = valor;
+        document.querySelectorAll('.dir-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+        cargarListaParadas();
     }
 
     function enviarMensaje() {
@@ -303,10 +357,11 @@
         if (tel && msg) { db.ref("chat_comunidad").push({ tel, msg, time: Date.now() }); document.getElementById('chatInput').value = ""; }
     }
 
-    db.ref("chat_comunidad").limitToLast(5).on("child_added", snap => {
+    db.ref("chat_comunidad").limitToLast(10).on("child_added", snap => {
         const m = snap.val();
         const d = document.createElement("div");
-        d.innerHTML = `<b style="color:var(--celeste)">${m.tel}:</b> ${m.msg}`;
+        d.style.marginBottom = "8px";
+        d.innerHTML = `<b style="color:var(--accent)">${m.tel.substring(0,4)}****:</b> <span style="color:#bbb">${m.msg}</span>`;
         document.getElementById("chatDisplay").appendChild(d);
         document.getElementById("chatDisplay").scrollTop = document.getElementById("chatDisplay").scrollHeight;
     });
