@@ -222,7 +222,6 @@
             const busesLive = snap.val() || {};
             detalleBox.innerHTML = ""; 
 
-            // Limpieza de marcadores inactivos
             for (let id in markersBuses) {
                 if (!busesLive[id]) {
                     map.removeLayer(markersBuses[id]);
@@ -234,7 +233,6 @@
                 const b = child.val();
                 activos++;
                 
-                // Cálculo de estado de conexión GPS[cite: 1]
                 const tiempoMsg = b.timestamp || b.ultima_actualizacion;
                 const min = (Date.now() - tiempoMsg) / 60000;
                 let colorStatus = "#1e8e3e"; // Verde
@@ -330,14 +328,30 @@
             });
         });
 
+        // CORRECCIÓN QR PARA EVITAR 404[cite: 2]
         function registrarConductorAdmin() {
             const unidad = prompt("Número de Unidad:");
             const empresa = prompt("Nombre de Cooperativa:");
             if(!unidad || !empresa) return;
-            const id = "BUS-" + Math.floor(1000 + Math.random()*9000);
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(window.location.origin + '/conductor.html?id=' + id)}`;
-            db.ref('conductores_autorizados/' + id).set({ unidad, empresa_nombre: empresa, qr: qrUrl });
-            window.open(qrUrl, '_blank');
+            
+            const idUnidad = "BUS-" + Math.floor(1000 + Math.random() * 9000);
+            
+            // Construcción de URL robusta basada en la ubicación actual del archivo
+            const urlActual = window.location.href;
+            const rutaBase = urlActual.substring(0, urlActual.lastIndexOf('/'));
+            const urlFinalConductor = `${rutaBase}/conductor.html?id=${idUnidad}`;
+
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(urlFinalConductor)}`;
+            
+            db.ref('conductores_autorizados/' + idUnidad).set({ 
+                unidad: unidad, 
+                empresa_nombre: empresa, 
+                qr: qrUrl,
+                estado: 'validada'
+            }).then(() => {
+                alert("¡Unidad Registrada! Se abrirá el código QR.");
+                window.open(qrUrl, '_blank');
+            });
         }
 
         function limpiarChat() { db.ref('chat_comunidad').set(null); }
