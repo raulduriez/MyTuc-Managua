@@ -5,14 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MyTuc Managua | Admin Master</title>
     
-    <!-- Firebase y Herramientas -->
+    <!-- Librerías Externas -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Librería para Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 
     <style>
@@ -111,8 +109,8 @@
                 <div class="menu-btn" onclick="openView('view-stats')">
                     <i class="fas fa-chart-line"></i>
                     <div>
-                        <h3>Mapa y Estadísticas</h3>
-                        <p>Radar en vivo, alertas de parada y chat</p>
+                        <h3>Centro de Control y Mapa</h3>
+                        <p>Radar en vivo, detalle de unidades y chat</p>
                     </div>
                 </div>
                 <div class="menu-btn" onclick="openView('view-registros')">
@@ -132,15 +130,24 @@
         <aside class="sidebar">
             <h2 style="color:var(--primary)">Centro de Control</h2>
             <div class="card">
-                <h3>Unidades en Línea</h3>
+                <h3>Estado de la Flota</h3>
                 <div style="text-align:center; padding:10px;">
                     <b id="countBuses" style="font-size:32px; color:var(--primary);">0</b><br>
-                    <small style="color:var(--success);">GPS ACTIVOS</small>
+                    <small style="color:var(--success);">UNIDADES ACTIVAS</small>
                 </div>
             </div>
+            
+            <!-- Detalle en Vivo de Unidades -->
+            <div class="card">
+                <h3>Detalle de Unidades en Vivo</h3>
+                <div id="detalleActivos" class="scroll-list" style="max-height: 250px; background: #f0f4f8; border-radius: 8px;">
+                    <!-- Se carga Unidad/Ruta/Teléfono dinámicamente -->
+                </div>
+            </div>
+
             <div class="card">
                 <h3>Reportes de Usuarios</h3>
-                <div id="listAlertas" class="scroll-list" style="max-height: 200px;"></div>
+                <div id="listAlertas" class="scroll-list" style="max-height: 150px;"></div>
                 <button class="btn-action" style="background:#eee; color:#333" onclick="limpiarChat()">Limpiar Chat</button>
             </div>
         </aside>
@@ -190,12 +197,14 @@
         const busIcon = L.divIcon({ html: '<i class="fas fa-bus" style="color:#1a73e8; font-size:22px; text-shadow: 0 0 3px white;"></i>', className: 'b-icon', iconSize: [22, 22] });
         let markersBuses = {};
 
-        // Lógica de monitoreo GPS y limpieza[cite: 1]
+        // Sincronización GPS, limpieza y detalle en vivo[cite: 1]
         db.ref('buses').on('value', snap => {
             let activos = 0;
+            const detalleBox = document.getElementById('detalleActivos');
             const busesLive = snap.val() || {};
-            
-            // Limpiar marcadores de buses que ya no están activos[cite: 1]
+            detalleBox.innerHTML = ""; 
+
+            // Limpiar marcadores de buses inactivos[cite: 1]
             for (let id in markersBuses) {
                 if (!busesLive[id] || busesLive[id].estado !== 'activo') {
                     map.removeLayer(markersBuses[id]);
@@ -207,15 +216,26 @@
                 const b = child.val();
                 if(b.estado === 'activo') {
                     activos++;
+                    
+                    // Detalle para el Centro de Control[cite: 1]
+                    detalleBox.innerHTML += `
+                        <div style="padding: 10px; border-bottom: 1px solid #d1d9e6; font-size: 13px; color: #333;">
+                            <b style="color:var(--primary)">Unidad: ${child.key}</b><br>
+                            <i class="fas fa-route"></i> Ruta: ${b.ruta || 'Sin asignar'}<br>
+                            <i class="fas fa-phone"></i> Tel: ${b.telefono || 'N/A'}
+                        </div>`;
+
                     if(markersBuses[child.key]) markersBuses[child.key].setLatLng([b.lat, b.lng]);
-                    else markersBuses[child.key] = L.marker([b.lat, b.lng], {icon: busIcon}).addTo(map).bindPopup(`Unidad: ${child.key}<br>Ruta: ${b.ruta}`);
+                    else markersBuses[child.key] = L.marker([b.lat, b.lng], {icon: busIcon}).addTo(map)
+                        .bindPopup(`<b>Unidad: ${child.key}</b><br>Ruta: ${b.ruta}<br>Tel: ${b.telefono}`);
                 }
             });
             document.getElementById('countBuses').innerText = activos;
+            if (activos === 0) detalleBox.innerHTML = "<p style='text-align:center; padding:20px; color:#999;'>Sin unidades activas.</p>";
             actualizarListaMonitoreo(busesLive);
         });
 
-        // Actualización de lista con alertas de tiempo[cite: 1]
+        // Monitor de registros con alertas de tiempo de parada[cite: 1]
         function actualizarListaMonitoreo(busesLive) {
             db.ref('conductores_autorizados').once('value', snap => {
                 const list = document.getElementById('listConductores');
@@ -253,7 +273,6 @@
             });
         }
 
-        // Cooperativas[cite: 1]
         function nuevaEmpresa() {
             const nom = prompt("Nombre:");
             if(nom) db.ref('empresas/' + Date.now()).set({ nombre: nom, estado: 'activo' });
@@ -266,7 +285,6 @@
             });
         });
 
-        // Registro de Unidades y QR Dinámico[cite: 1]
         function registrarConductorAdmin() {
             const unidad = prompt("Unidad:");
             const empresa = prompt("Cooperativa:");
@@ -276,12 +294,11 @@
             const urlCarpeta = urlActual.substring(0, urlActual.lastIndexOf('/'));
             const urlFinalConductor = urlCarpeta + "/conductor.html?id=" + cod;
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(urlFinalConductor)}`;
-
             db.ref('conductores_autorizados/' + cod).set({ unidad, empresa_nombre: empresa, estado: 'validada', qr: qrUrl });
             window.open(qrUrl, '_blank');
         }
 
-        // Exportar a Excel[cite: 1]
+        // Exportar Reporte Excel[cite: 1]
         function descargarReporteExcel() {
             db.ref('buses').once('value', snap => {
                 const data = [];
@@ -290,6 +307,7 @@
                     data.push({
                         Unidad: child.key,
                         Ruta: b.ruta || 'N/A',
+                        Telefono: b.telefono || 'N/A',
                         Estado: b.estado,
                         Ultima_Actualizacion: b.ultima_actualizacion ? new Date(b.ultima_actualizacion).toLocaleString() : 'N/A',
                         Latitud: b.lat,
@@ -303,7 +321,6 @@
             });
         }
 
-        // Chat
         db.ref('chat_comunidad').on('child_added', snap => {
             const m = snap.val();
             const div = document.createElement('div');
