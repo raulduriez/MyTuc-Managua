@@ -3,166 +3,299 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyTuc | Acceso Usuarios</title>
+    <title>MyTuc Managua | Acceso</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="data/edcion_paradas_Mang_1.js"></script>
+
     <style>
         :root {
-            --bg-dark: #070b12;
-            --accent: #00e5ff; /* Cian espacial */
-            --glow: #7000ff;   /* Púrpura neón */
+            --azul-oscuro: #000428;
+            --azul-deep: #004e92;
+            --celeste: #00A8E8;
+            --verde-neon: #2ECC71;
+            --negro-login: #0a0e14;
         }
 
         body {
+            background: radial-gradient(circle at center, var(--azul-deep), var(--azul-oscuro)) !important;
+            color: white !important;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
             margin: 0;
-            height: 100vh;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            background: var(--bg-dark);
-            font-family: 'Segoe UI', sans-serif;
-            overflow: hidden;
+            flex-direction: column;
         }
 
-        /* Contenedor del Logo con Giro Espacial */
-        .portal-container {
-            position: relative;
-            width: 250px;
-            height: 250px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-        }
-
-        /* El círculo con efecto de colores recorriendo el borde */
-        .space-ring {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            background: conic-gradient(from 0deg, transparent, var(--accent), var(--glow), transparent);
-            animation: spin 1.5s linear infinite;
-            filter: drop-shadow(0 0 15px var(--accent));
-        }
-
-        .space-ring::after {
-            content: '';
-            position: absolute;
-            inset: 6px;
-            background: var(--bg-dark);
-            border-radius: 50%;
-        }
-
-        @keyframes spin {
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Logo Central */
-        .logo-central {
-            width: 180px;
-            height: 180px;
-            border-radius: 50%;
-            z-index: 10;
-            object-fit: cover;
-            border: 2px solid rgba(255,255,255,0.1);
-        }
-
-        /* Modal de Entrada */
-        .access-card {
-            display: none;
-            position: fixed;
-            background: #111827;
-            padding: 25px;
-            border-radius: 24px;
-            border: 1px solid var(--accent);
-            text-align: center;
-            width: 85%;
-            max-width: 340px;
-            z-index: 100;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-        }
-
-        .access-card h2 { color: white; margin-top: 0; font-size: 1.3rem; }
+        /* --- ESTILO DE LAS IMÁGENES QUE ENVIASTE --- */
         
-        .input-group {
-            background: rgba(0,0,0,0.3);
-            border-radius: 12px;
+        /* Logo Circular con Aura Neón */
+        .logo-neon-container {
+            width: 220px; height: 220px;
+            border-radius: 50%;
+            background: #111;
             padding: 10px;
-            margin: 20px 0;
-            border: 1px solid #333;
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+            box-shadow: 0 0 30px var(--celeste), inset 0 0 15px var(--celeste);
+            border: 4px solid var(--celeste);
+            margin: 20px auto;
+        }
+        .logo-neon-container img {
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
         }
 
-        .input-group input {
-            background: transparent;
-            border: none;
-            color: var(--accent);
-            width: 100%;
+        /* Card de Identificación (Imagen 2) */
+        .identificacion-card {
+            background: rgba(10, 14, 20, 0.9);
+            border: 1px solid var(--celeste);
+            border-radius: 30px;
+            padding: 40px 30px;
+            max-width: 450px;
+            width: 90%;
+            margin: auto;
             text-align: center;
-            font-size: 1.2rem;
-            outline: none;
+            box-shadow: 0 0 40px rgba(0, 168, 232, 0.2);
+        }
+        .identificacion-card h2 {
+            letter-spacing: 3px; font-weight: 800; margin-bottom: 20px;
+        }
+        .identificacion-card p { opacity: 0.7; font-size: 0.9rem; margin-bottom: 25px; }
+
+        .input-numero {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px;
+            color: white;
+            font-size: 1.5rem;
+            text-align: center;
+            padding: 12px;
+            width: 100%;
+            margin-bottom: 25px;
+            letter-spacing: 5px;
         }
 
-        .btn-enter {
-            background: var(--accent);
-            color: #000;
-            width: 100%;
-            padding: 15px;
-            border-radius: 12px;
+        .btn-activar-radar {
+            background: var(--celeste);
+            color: black;
+            font-weight: 900;
             border: none;
-            font-weight: bold;
-            font-size: 1rem;
-            cursor: pointer;
+            border-radius: 15px;
+            padding: 18px;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 2px;
             transition: 0.3s;
         }
+        .btn-activar-radar:hover { transform: scale(1.02); filter: brightness(1.2); }
 
-        #overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(5px);
-            z-index: 90;
+        /* --- INTERFAZ PRINCIPAL (OCULTA AL INICIO) --- */
+        #mainInterface { display: none; }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-radius: 25px;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 20px;
         }
+        #mapa { height: 400px; border-radius: 20px; border: 2px solid var(--celeste); }
+
+        .background-blobs { position: fixed; width: 100%; height: 100%; z-index: -1; filter: blur(80px); opacity: 0.3; }
+        .blob { position: absolute; background: var(--celeste); border-radius: 50%; animation: move 20s infinite alternate; }
+        @keyframes move { from { transform: translate(0, 0); } to { transform: translate(100px, 100px); } }
     </style>
 </head>
 <body>
 
-    <div class="portal-container" onclick="abrirPortal()">
-        <div class="space-ring"></div>
-        <img src="img/Logo.jpeg" class="logo-central" alt="Logo MyTuc">
+    <div class="background-blobs">
+        <div class="blob" style="width: 300px; height: 300px; top: 10%; left: 10%;"></div>
+        <div class="blob" style="width: 250px; height: 250px; bottom: 10%; right: 10%; background: var(--verde-neon);"></div>
     </div>
 
-    <div id="overlay"></div>
-
-    <div id="modalAcceso" class="access-card">
-        <h2>IDENTIFICACIÓN</h2>
-        <p style="color: #9ca3af; font-size: 0.9rem;">Ingrese su número para rastrear su ruta en tiempo real.</p>
-        
-        <div class="input-group">
-            <input type="tel" id="userPhone" placeholder="8888-8888" maxlength="8">
+    <!-- SECCIÓN DE ACCESO (Lo primero que se ve) -->
+    <div id="accessSection" class="container d-flex flex-column justify-content-center flex-grow-1">
+        <!-- Logo Circular -->
+        <div class="logo-neon-container mb-4">
+            <img src="img/Logo.jpeg" alt="Logo MyTuc" onerror="this.src='https://via.placeholder.com/200'">
         </div>
 
-        <button class="btn-enter" onclick="concederAcceso()">
-            <i class="fas fa-location-arrow"></i> ACTIVAR RADAR
-        </button>
+        <!-- Panel Identificación -->
+        <div class="identificacion-card">
+            <h2>IDENTIFICACIÓN</h2>
+            <p>Ingrese su número para rastrear su ruta en tiempo real.</p>
+            <input type="tel" id="userPhone" class="input-numero" placeholder="8888-8888" maxlength="8">
+            <button class="btn-activar-radar" onclick="validarYEntrar()">ACTIVAR RADAR</button>
+        </div>
+    </div>
+
+    <!-- SECCIÓN PRINCIPAL (Se muestra después de "Activar Radar") -->
+    <div id="mainInterface" class="container py-4">
+        <header class="text-center mb-4">
+            <h1 class="fw-bold" style="background: linear-gradient(to right, #fff, var(--celeste)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Web-MyBus</h1>
+        </header>
+
+        <div class="row g-4">
+            <div class="col-12 col-md-4">
+                <div class="glass-card mb-4">
+                    <label class="small text-uppercase opacity-75 mb-2">Seleccionar Ruta</label>
+                    <select id="selectRuta" class="form-select bg-dark text-white border-0 mb-3" style="border-radius: 12px;">
+                        <option value="210">Ruta 210</option>
+                    </select>
+                    
+                    <label class="small text-uppercase opacity-75 mb-2">Buscar Parada</label>
+                    <input list="listaParadas" id="inputParada" class="form-control bg-dark text-white border-0" placeholder="Nombre de parada..." onchange="consultarParadaManual()" style="border-radius: 12px;">
+                    <datalist id="listaParadas"></datalist>
+                </div>
+
+                <div class="glass-card">
+                    <h6 class="fw-bold mb-3"><i class="fas fa-comments me-2"></i> Comunidad</h6>
+                    <div id="chatDisplay" style="height: 150px; overflow-y: auto; font-size: 0.85rem;" class="mb-2"></div>
+                    <div class="input-group">
+                        <input type="text" id="chatInput" class="form-control bg-dark text-white border-0" placeholder="Escribir...">
+                        <button onclick="enviarMensaje()" class="btn btn-primary" style="background: var(--celeste); border:0;"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-8">
+                <div id="mapa"></div>
+                
+                <div id="arriboPanel" class="mt-4 p-3 bg-white text-dark rounded-4 shadow-lg" style="display:none;">
+                    <h5 class="fw-bold"><i class="fas fa-bus-alt text-primary me-2"></i> Información de Arribo</h5>
+                    <table class="table mb-0">
+                        <thead><tr class="small text-muted"><th>Punto</th><th>Referencia</th><th>Distancia</th><th>Estado</th></tr></thead>
+                        <tbody id="tablaBody" class="fw-bold"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        function abrirPortal() {
-            document.getElementById('modalAcceso').style.display = 'block';
-            document.getElementById('overlay').style.display = 'block';
+        // CONFIGURACIÓN FIREBASE
+        const firebaseConfig = { apiKey: "AIzaSyDGBkCnWppaprzs2gUkTj16nk6WOiLn5yQ", databaseURL: "https://bus-tracker-managua-default-rtdb.firebaseio.com" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // LÓGICA DE ACCESO
+        function validarYEntrar() {
+            const tel = document.getElementById('userPhone').value;
+            if (tel.length < 8) {
+                alert("Por favor, ingrese un número válido de 8 dígitos.");
+                return;
+            }
+            
+            // Efecto de transición
+            document.getElementById('accessSection').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('accessSection').style.display = 'none';
+                document.getElementById('mainInterface').style.display = 'block';
+                iniciarRadarInteligente(); // Activa GPS automáticamente al entrar
+                map.invalidateSize(); // Refresca el mapa
+            }, 500);
         }
 
-        function concederAcceso() {
-            const tel = document.getElementById('userPhone').value;
-            if(tel.length >= 8) {
-                // Guardamos el teléfono para que el radar lo lea automáticamente
-                localStorage.setItem('myBus_phone', tel);
-                // Redirigimos a la página del mapa[cite: 3]
-                window.location.href = "radar.html?start=true";
-            } else {
-                alert("Por favor, ingrese un número válido.");
+        // LÓGICA DE RADAR Y MAPA (Mantenida de tu código)
+        const map = L.map('mapa', { zoomControl: false }).setView([12.1150, -86.2363], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        let userMarker, busMarker, paradaMarker, linePB, miPos = null;
+        let paradaSeleccionada = null;
+
+        function cargarListaParadas() {
+            const list = document.getElementById('listaParadas');
+            if(window.json_edcion_paradas_Mang_1) {
+                json_edcion_paradas_Mang_1.features.forEach(f => {
+                    const opt = document.createElement('option');
+                    opt.value = f.properties.Nom_Parada;
+                    list.appendChild(opt);
+                });
             }
         }
+        cargarListaParadas();
+
+        function iniciarRadarInteligente() {
+            const tel = document.getElementById('userPhone').value;
+            navigator.geolocation.getCurrentPosition(pos => {
+                miPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                let minDist = Infinity;
+                json_edcion_paradas_Mang_1.features.forEach(f => {
+                    const d = calcularDist(miPos.lat, miPos.lng, f.geometry.coordinates[1], f.geometry.coordinates[0]);
+                    if (d < minDist) { minDist = d; paradaSeleccionada = f; }
+                });
+                document.getElementById('inputParada').value = paradaSeleccionada.properties.Nom_Parada;
+                document.getElementById('arriboPanel').style.display = 'block';
+                actualizarInterfaz();
+                notificarAdmin("Radar Automático");
+            }, null, { enableHighAccuracy: true });
+        }
+
+        function actualizarInterfaz() {
+            const pLat = paradaSeleccionada.geometry.coordinates[1];
+            const pLng = paradaSeleccionada.geometry.coordinates[0];
+            
+            if(userMarker) map.removeLayer(userMarker);
+            userMarker = L.marker([miPos.lat, miPos.lng]).addTo(map);
+            
+            if(paradaMarker) map.removeLayer(paradaMarker);
+            paradaMarker = L.marker([pLat, pLng], {icon: L.divIcon({html: '<i class="fas fa-map-pin text-danger fa-2x"></i>', className:'bg-transparent'})}).addTo(map);
+            
+            map.setView([pLat, pLng], 15);
+
+            db.ref('buses').on('value', snap => {
+                const buses = snap.val();
+                const tabla = document.getElementById('tablaBody');
+                if(!buses) return;
+                const b = Object.values(buses)[0]; 
+                const dBP = calcularDist(b.lat, b.lng, pLat, pLng);
+                const dUP = calcularDist(miPos.lat, miPos.lng, pLat, pLng);
+
+                tabla.innerHTML = `
+                    <tr><td>TU POSICIÓN</td><td>Cerca de parada</td><td>${(dUP*1000).toFixed(0)}m</td><td>${dUP < 0.1 ? 'En sitio' : 'Caminando'}</td></tr>
+                    <tr class="table-info"><td>BUS PRÓXIMO</td><td>Unidad ${Object.keys(buses)[0]}</td><td>${(dBP*1000).toFixed(0)}m</td><td>${dBP < 0.5 ? 'Llegando' : Math.round(dBP*3) + ' min'}</td></tr>`;
+
+                if(busMarker) busMarker.setLatLng([b.lat, b.lng]);
+                else busMarker = L.marker([b.lat, b.lng], {icon: L.divIcon({html: '<i class="fas fa-bus text-success fa-2x"></i>', className:'bg-transparent'})}).addTo(map);
+                if(linePB) map.removeLayer(linePB);
+                linePB = L.polyline([[b.lat, b.lng], [pLat, pLng]], {color: '#2ECC71', weight: 4, dashArray: '10, 10'}).addTo(map);
+            });
+        }
+
+        function calcularDist(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2-lat1)*Math.PI/180;
+            const dLon = (lon2-lon1)*Math.PI/180;
+            const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+            return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+        }
+
+        function notificarAdmin(metodo) {
+            const tel = document.getElementById('userPhone').value;
+            db.ref(`control_master/usuarios_activos/${tel}`).update({
+                lat: miPos.lat, lng: miPos.lng,
+                telefono: tel, metodo: metodo,
+                parada: paradaSeleccionada.properties.Nom_Parada,
+                timestamp: Date.now()
+            });
+        }
+        
+        // Chat listener simplificado
+        db.ref("chat_comunidad").limitToLast(10).on("child_added", snap => {
+            const m = snap.val();
+            const div = document.createElement("div");
+            div.innerHTML = `<b style="color:var(--celeste)">${m.telefono.slice(-4)}:</b> ${m.mensaje}`;
+            document.getElementById("chatDisplay").appendChild(div);
+            document.getElementById("chatDisplay").scrollTop = document.getElementById("chatDisplay").scrollHeight;
+        });
     </script>
 </body>
 </html>
