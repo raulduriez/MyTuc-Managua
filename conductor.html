@@ -8,8 +8,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0b0e14; color: #fff; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; }
-        body::before { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: url('img/Logo.jpeg'); background-size: 70px; background-repeat: repeat; opacity: 0.12; z-index: -1; }
-        .container { width: 100%; max-width: 400px; background: rgba(22, 27, 34, 0.95); padding: 30px; border-radius: 20px; border: 1px solid #30363d; text-align: center; backdrop-filter: blur(10px); }
+        body::before { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: url('img/Logo.jpeg'); background-size: 70px; opacity: 0.12; z-index: -1; }
+        .container { width: 100%; max-width: 400px; background: rgba(22, 27, 34, 0.95); padding: 30px; border-radius: 20px; border: 1px solid #30363d; text-align: center; }
         input { width: 100%; padding: 15px; margin-bottom: 15px; background: #000; border: 1px solid #333; border-radius: 12px; color: #fff; font-size: 16px; outline: none; }
         .btn { width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
         .btn-start { background: #1a73e8; color: #fff; }
@@ -22,37 +22,31 @@
 <div class="container">
     <img src="img/Logo.jpeg" style="height:60px; border-radius:10px; margin-bottom:10px;">
     <h1>Panel Conductor</h1>
-    
     <div id="step1">
         <input type="text" id="unidadCodigo" placeholder="Esperando código QR...">
         <button class="btn btn-start" onclick="validarCodigo()">VERIFICAR</button>
     </div>
-
     <div id="extraInfo">
         <div class="badge" id="labelUnidad">UNIDAD</div>
         <input type="tel" id="telConductor" placeholder="Número de Teléfono">
         <input type="text" id="rutaNombre" placeholder="Ruta (ej. 114)">
         <button class="btn btn-start" onclick="iniciarGPS()">ACTIVAR GPS EN VIVO</button>
     </div>
-
     <button id="stopBtn" class="btn btn-stop" onclick="detenerGPS()">DETENER TRANSMISIÓN</button>
     <p id="status" style="margin-top:15px; font-weight:bold;"></p>
 </div>
-
 <script>
     const firebaseConfig = { apiKey: "AIzaSyDGBkCnWppaprzs2gUkTj16nk6WOiLn5yQ", databaseURL: "https://bus-tracker-managua-default-rtdb.firebaseio.com" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-
     let watchId = null, unidadIdGlobal = null, codigoGlobal = null;
 
-    // DETECTAR ID DESDE QR AUTOMÁTICAMENTE
     window.onload = function() {
         const urlParams = new URLSearchParams(window.location.search);
         const idQR = urlParams.get('id');
         if (idQR) {
             document.getElementById('unidadCodigo').value = idQR;
-            setTimeout(validarCodigo, 500); 
+            setTimeout(validarCodigo, 800); 
         }
     };
 
@@ -60,12 +54,12 @@
         const cod = document.getElementById('unidadCodigo').value.trim();
         db.ref(`conductores_autorizados/${cod}`).once('value', snap => {
             const d = snap.val();
-            if(d && (d.estado === 'validada' || d.estado === 'activo')) {
+            if(d && d.estado === 'validada') {
                 codigoGlobal = cod; unidadIdGlobal = d.unidad;
                 document.getElementById('step1').style.display = 'none';
                 document.getElementById('extraInfo').style.display = 'block';
                 document.getElementById('labelUnidad').innerText = "UNIDAD #" + d.unidad + " (" + d.empresa_nombre + ")";
-            } else { alert("Código inválido o bloqueado."); }
+            } else { alert("Código inválido, bloqueado o pausado."); }
         });
     }
 
@@ -73,13 +67,11 @@
         const tel = document.getElementById('telConductor').value;
         const rut = document.getElementById('rutaNombre').value;
         if(!tel || !rut) return alert("Faltan datos");
-        
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(() => {
                 document.getElementById('extraInfo').style.display = 'none';
                 document.getElementById('stopBtn').style.display = 'block';
                 document.getElementById('status').innerText = "🛰️ ENVIANDO GPS EN VIVO";
-                
                 watchId = navigator.geolocation.watchPosition(pos => {
                     db.ref(`buses/${unidadIdGlobal}`).update({
                         lat: pos.coords.latitude, lng: pos.coords.longitude,
