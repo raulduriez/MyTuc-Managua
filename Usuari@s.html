@@ -129,6 +129,7 @@
             color: var(--azul-deep);
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             transition: transform 0.2s;
+            cursor: pointer;
         }
         
         .stop-label:hover {
@@ -163,6 +164,15 @@
             color: var(--azul-deep);
         }
         
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 13px;
+        }
+        
         /* Responsive */
         @media (max-width: 768px) {
             .sidebar { width: 320px; }
@@ -175,10 +185,10 @@
 
 <div id="modal-registro">
     <div class="form-registro">
-        <img src="img/logo2.jpeg" alt="MyBus" onerror="this.src='https://via.placeholder.com/150?text=MyBus'">
-        <h2>Acceso al Sistema</h2>
+        <img src="img/logo2.jpeg" alt="MyBus" onerror="this.style.display='none'">
+        <h2>🚍 Acceso al Sistema MyBus</h2>
         <input type="tel" id="input-phone" placeholder="Ingresa tu teléfono" style="width:100%; padding:15px; border:2px solid #ddd; border-radius:10px; margin-bottom:20px; font-size:16px;">
-        <button class="btn-main btn-auto" onclick="autorizarAcceso()">ACTIVAR GPS Y ENTRAR</button>
+        <button class="btn-main btn-auto" onclick="autorizarAcceso()">📍 ACTIVAR GPS Y ENTRAR</button>
     </div>
 </div>
 
@@ -214,10 +224,93 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-search@3.0.2/dist/leaflet-search.min.js"></script>
 
-<!-- Carga de tu archivo real de paradas - Asegúrate que la variable se llame PUNTOS_MANAGUA_01052026_1 -->
-<script src="data/PUNTOS_MANAGUA_01052026_1.js"></script>
+<!-- Carga del archivo de paradas con manejo de errores -->
+<script>
+    // Variable global para almacenar paradas
+    window.PUNTOS_MANAGUA_01052026_1 = null;
+    
+    // Intentar cargar el archivo de paradas
+    function cargarArchivoParadas() {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'data/PUNTOS_MANAGUA_01052026_1.js';
+            script.onload = () => {
+                if (window.PUNTOS_MANAGUA_01052026_1) {
+                    console.log("✅ Archivo de paradas cargado correctamente");
+                    resolve(true);
+                } else {
+                    console.warn("⚠️ El archivo se cargó pero no contiene la variable esperada");
+                    reject(new Error("Variable PUNTOS_MANAGUA_01052026_1 no definida"));
+                }
+            };
+            script.onerror = () => {
+                console.error("❌ No se pudo cargar el archivo de paradas");
+                reject(new Error("Archivo no encontrado"));
+            };
+            document.head.appendChild(script);
+            
+            // Timeout por si tarda demasiado
+            setTimeout(() => {
+                if (!window.PUNTOS_MANAGUA_01052026_1) {
+                    reject(new Error("Timeout cargando paradas"));
+                }
+            }, 5000);
+        });
+    }
+</script>
 
 <script>
+    // ========== DATOS DE PARADAS DE RESPALDO (MANAGUA) ==========
+    function generarParadasRespaldo() {
+        console.log("📌 Generando paradas de respaldo para Managua");
+        
+        // Paradas importantes de Managua (coordenadas reales)
+        const paradesRespaldo = [
+            { nombre: "UCA Norte", num: "001", lat: 12.1353, lng: -86.2679 },
+            { nombre: "UCA Sur", num: "002", lat: 12.1328, lng: -86.2679 },
+            { nombre: "Rotonda Universitaria", num: "003", lat: 12.1285, lng: -86.2685 },
+            { nombre: "Metrocentro", num: "004", lat: 12.1289, lng: -86.2609 },
+            { nombre: "Galerías Santo Domingo", num: "005", lat: 12.1183, lng: -86.2594 },
+            { nombre: "Hospital Militar", num: "006", lat: 12.1117, lng: -86.2448 },
+            { nombre: "ENEL Central", num: "007", lat: 12.1454, lng: -86.2699 },
+            { nombre: "Plaza Inter", num: "008", lat: 12.1429, lng: -86.2935 },
+            { nombre: "Centaméricas", num: "009", lat: 12.1255, lng: -86.2710 },
+            { nombre: "Los Robles", num: "010", lat: 12.1178, lng: -86.2740 },
+            { nombre: "Colonial Los Robles", num: "011", lat: 12.1142, lng: -86.2756 },
+            { nombre: "Frente al Novillo", num: "012", lat: 12.1063, lng: -86.2508 },
+            { nombre: "Mercado Oriental", num: "013", lat: 12.1447, lng: -86.2445 },
+            { nombre: "Mercado Roberto Huembes", num: "014", lat: 12.1186, lng: -86.2494 },
+            { nombre: "Universidad Centroamericana", num: "015", lat: 12.1360, lng: -86.2589 },
+            { nombre: "UNAN Managua", num: "016", lat: 12.1290, lng: -86.2546 },
+            { nombre: "INSS Central", num: "017", lat: 12.1224, lng: -86.2720 },
+            { nombre: "Tica Bus", num: "018", lat: 12.1510, lng: -86.2840 },
+            { nombre: "Puerto de los Buses", num: "019", lat: 12.1518, lng: -86.2766 },
+            { nombre: "Estadio Nacional", num: "020", lat: 12.1108, lng: -86.2393 }
+        ];
+        
+        // Convertir al formato GeoJSON esperado
+        const features = paradesRespaldo.map(parada => ({
+            type: "Feature",
+            geometry: {
+                type: "Point",
+                coordinates: [parada.lng, parada.lat]
+            },
+            properties: {
+                NUM_PARADA: parada.num,
+                DESCRIPCIO: parada.nombre,
+                NOMBRE: parada.nombre
+            }
+        }));
+        
+        window.PUNTOS_MANAGUA_01052026_1 = {
+            type: "FeatureCollection",
+            features: features
+        };
+        
+        console.log(`✅ Generadas ${features.length} paradas de respaldo`);
+        return true;
+    }
+    
     // ========== INICIALIZACIÓN DEL MAPA ==========
     var map = L.map('map', {
         zoomControl: true,
@@ -232,7 +325,8 @@
     var userMarker, lineaDashed, capaParadas;
     var miUbicacion = null;
     var watchId = null;
-    var paradasLista = []; // Para almacenar paradas con nombres formateados
+    var paradasLista = [];
+    var datosCargados = false;
 
     // Icono Norte Rojo (tu ubicación)
     var iconNorte = L.divIcon({
@@ -245,8 +339,8 @@
     // ========== FUNCIÓN PARA NORMALIZAR PARADAS ==========
     function normalizarParadas() {
         if (!window.PUNTOS_MANAGUA_01052026_1 || !window.PUNTOS_MANAGUA_01052026_1.features) {
-            console.error("Error: No se encontró el objeto PUNTOS_MANAGUA_01052026_1");
-            document.getElementById('info-manual').innerHTML = '<p style="color:red;">❌ Error: No se encontraron datos de paradas. Verifica el archivo PUNTOS_MANAGUA_01052026_1.js</p>';
+            console.error("Error: No se encontraron datos de paradas");
+            document.getElementById('info-manual').innerHTML = '<div class="error-message">❌ Error: No se encontraron datos de paradas. Se usarán datos de respaldo.</div>';
             return false;
         }
         
@@ -259,9 +353,6 @@
                               feature.properties.NOMBRE || 
                               `Parada ${feature.properties.NUM_PARADA || '?'}`;
             
-            // Asegurar que tenga coordenadas en formato [lat, lng]
-            let coords = [feature.geometry.coordinates[1], feature.geometry.coordinates[0]];
-            
             return {
                 type: "Feature",
                 geometry: {
@@ -270,7 +361,7 @@
                 },
                 properties: {
                     ...feature.properties,
-                    name: nombreParada,  // Campo requerido por leaflet-search
+                    name: nombreParada,
                     NUM_PARADA: feature.properties.NUM_PARADA || '',
                     DESCRIPCIO: nombreParada
                 }
@@ -289,21 +380,48 @@
                 let numeroParada = feature.properties.NUM_PARADA || 
                                   (feature.properties.name ? feature.properties.name.substring(0, 2) : 'P');
                 
-                return L.marker(latlng, {
+                let marker = L.marker(latlng, {
                     icon: L.divIcon({
                         className: 'stop-label',
                         html: `<div style="font-weight:bold;">${numeroParada}</div>`,
                         iconSize: [30, 30],
                         popupAnchor: [0, -15]
                     })
-                }).bindPopup(`<b>${feature.properties.name}</b><br>N°: ${numeroParada}`);
+                }).bindPopup(`
+                    <b>${feature.properties.name}</b><br>
+                    N°: ${numeroParada}<br>
+                    <button onclick="seleccionarParadaManual([${latlng.lat}, ${latlng.lng}], '${feature.properties.name}')" 
+                            style="margin-top:5px; padding:5px 10px; background:#004e92; color:white; border:none; border-radius:5px; cursor:pointer;">
+                        📍 Triangular
+                    </button>
+                `);
+                
+                // Click en el marcador
+                marker.on('click', () => {
+                    if (miUbicacion) {
+                        triangular([latlng.lat, latlng.lng], feature.properties.name);
+                    } else {
+                        alert("⚠️ Esperando ubicación GPS");
+                    }
+                });
+                
+                return marker;
             }
         }).addTo(map);
         
         console.log("✓ Capa de paradas cargada correctamente");
         return true;
     }
-
+    
+    // Función para seleccionar parada manualmente desde el popup
+    function seleccionarParadaManual(coords, nombre) {
+        if (miUbicacion) {
+            triangular(coords, nombre);
+        } else {
+            alert("⚠️ Esperando ubicación GPS");
+        }
+    }
+    
     // ========== INICIALIZAR BUSCADOR LEAFLET-SEARCH ==========
     function inicializarBuscador() {
         if (!capaParadas) {
@@ -321,10 +439,9 @@
         window.searchControl = new L.Control.Search({
             container: 'search-wrapper',
             layer: capaParadas,
-            propertyName: 'name',  // Buscar por el campo 'name'
+            propertyName: 'name',
             marker: false,
             moveToLocation: function(latlng, title, map) {
-                // Callback cuando se selecciona una parada
                 if (miUbicacion) {
                     triangular([latlng.lat, latlng.lng], title);
                 } else {
@@ -335,7 +452,6 @@
             textPlaceholder: '🔎 Buscar parada por nombre...',
             textErr: 'No se encontró la parada',
             buildTip: function(text, val) {
-                // Personalizar sugerencias
                 return '<div class="search-tip-item">📍 ' + text + '</div>';
             }
         });
@@ -355,6 +471,13 @@
         }, 100);
         
         console.log("✓ Buscador inicializado");
+        datosCargados = true;
+        
+        // Ocultar mensaje de error si existe
+        const infoManual = document.getElementById('info-manual');
+        if (infoManual && infoManual.innerHTML.includes('Error')) {
+            infoManual.innerHTML = '<p style="color:#999; text-align:center;">🔎 Selecciona una parada en el mapa o búscala por nombre</p>';
+        }
     }
 
     // ========== FUNCIÓN PRINCIPAL DE TRIANGULACIÓN ==========
@@ -397,7 +520,6 @@
         
         // Actualizar panel de buses cercanos según distancia
         if(distancia <= 500) {
-            // Simulación de buses cercanos (puedes conectar con API real)
             let busesInfo = generarBusesCercanos(distancia);
             document.getElementById('lista-buses').innerHTML = `
                 <div style="background: #e8f5e9; padding: 12px; border-radius: 8px;">
@@ -431,13 +553,13 @@
         return true;
     }
     
-    // Función simulada de buses cercanos (reemplazar con datos reales)
+    // Función simulada de buses cercanos
     function generarBusesCercanos(distancia) {
-        // Simulación - Aquí puedes conectar con tu API de buses
         let tiempoEstimado = Math.max(2, Math.floor(distancia / 100) * 2);
         return [
             { numero: "102", tiempo: `${tiempoEstimado} min`, ruta: "Ciudad Sandino" },
-            { numero: "110", tiempo: `${tiempoEstimado + 3} min`, ruta: "Mercado Oriental" }
+            { numero: "110", tiempo: `${tiempoEstimado + 2} min`, ruta: "Mercado Oriental" },
+            { numero: "168", tiempo: `${tiempoEstimado + 4} min`, ruta: "Villa Fontana" }
         ];
     }
     
@@ -448,13 +570,18 @@
             return;
         }
         
-        // Mostrar loading
-        document.getElementById('info-manual').innerHTML = '<div class="loading">🔍 Buscando parada más cercana...</div>';
+        if(!datosCargados) {
+            alert("⚠️ Cargando datos de paradas. Por favor espera...");
+            return;
+        }
         
         if(!paradasLista || paradasLista.length === 0) {
             alert("⚠️ No hay datos de paradas disponibles");
             return;
         }
+        
+        // Mostrar loading
+        document.getElementById('info-manual').innerHTML = '<div class="loading">🔍 Buscando parada más cercana...</div>';
         
         let dMin = Infinity;
         let closest = null;
@@ -473,7 +600,6 @@
         
         if(closest && dMin <= 500) {
             triangular(closest, nombreClosest);
-            // Opcional: mostrar notificación
             mostrarNotificacion(`✅ Parada más cercana: ${nombreClosest} (${dMin.toFixed(0)}m)`);
         } else if(closest && dMin > 500) {
             document.getElementById('info-manual').innerHTML = `
@@ -489,9 +615,8 @@
         }
     }
     
-    // Notificación simple
+    // Notificación flotante
     function mostrarNotificacion(mensaje) {
-        // Crear notificación flotante
         let notif = document.createElement('div');
         notif.textContent = mensaje;
         notif.style.cssText = `
@@ -516,20 +641,17 @@
     }
     
     function iniciarSeguimientoGPS() {
-        // Verificar soporte de geolocalización
         if(!navigator.geolocation) {
             alert("❌ Tu navegador no soporta geolocalización");
             return;
         }
         
-        // Actualizar estado
         document.getElementById('gps-status').innerHTML = '🔄 Activando GPS...';
         
         watchId = navigator.geolocation.watchPosition(
             (pos) => {
                 miUbicacion = [pos.coords.latitude, pos.coords.longitude];
                 
-                // Actualizar o crear marcador
                 if(userMarker) map.removeLayer(userMarker);
                 userMarker = L.marker(miUbicacion, {
                     icon: iconNorte
@@ -537,28 +659,21 @@
                 .bindPopup('📍 Tu ubicación actual')
                 .openPopup();
                 
-                // Centrar solo la primera vez
                 if(!map.centrado) {
                     map.setView(miUbicacion, 16);
                     map.centrado = true;
                     document.getElementById('gps-status').innerHTML = '✅ GPS activo';
-                }
-                
-                // Opcional: actualizar distancia automáticamente si hay una parada seleccionada
-                if(window.paradaSeleccionada) {
-                    triangular(window.paradaSeleccionada.coords, window.paradaSeleccionada.nombre);
                 }
             },
             (error) => {
                 console.error("Error GPS:", error);
                 let mensaje = "";
                 switch(error.code) {
-                    case 1: mensaje = "Permiso denegado. Activa la ubicación en tu dispositivo."; break;
+                    case 1: mensaje = "Permiso denegado. Activa la ubicación."; break;
                     case 2: mensaje = "Ubicación no disponible. Verifica tu GPS."; break;
-                    case 3: mensaje = "Tiempo de espera agotado. Reintentando..."; break;
+                    case 3: mensaje = "Tiempo de espera agotado."; break;
                 }
                 document.getElementById('gps-status').innerHTML = `⚠️ ${mensaje}`;
-                alert(`Error GPS: ${mensaje}`);
             },
             {
                 enableHighAccuracy: true,
@@ -569,31 +684,36 @@
     }
     
     // ========== INICIALIZACIÓN PRINCIPAL ==========
-    document.addEventListener('DOMContentLoaded', () => {
-        // Cargar paradas
-        if(typeof PUNTOS_MANAGUA_01052026_1 !== 'undefined') {
-            let cargado = normalizarParadas();
-            if(cargado) {
-                inicializarBuscador();
-            }
-        } else {
-            console.error("No se encuentra PUNTOS_MANAGUA_01052026_1");
-            document.getElementById('info-manual').innerHTML = '<p style="color:red;">❌ Error: No se cargó el archivo de paradas. Verifica que PUNTOS_MANAGUA_01052026_1.js existe.</p>';
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Intentar cargar archivo de paradas
+        try {
+            await cargarArchivoParadas();
+            console.log("✅ Archivo de paradas cargado exitosamente");
+        } catch (error) {
+            console.warn("⚠️ Usando datos de respaldo:", error.message);
+            generarParadasRespaldo();
+            mostrarNotificacion("⚠️ Usando paradas de respaldo (demo)");
         }
         
-        // Mostrar modal si no hay sesión
+        // Normalizar y mostrar paradas
+        let cargado = normalizarParadas();
+        if(cargado) {
+            inicializarBuscador();
+        }
+        
+        // Verificar sesión
         if(localStorage.getItem('userPhone')) {
             document.getElementById('modal-registro').style.display = 'none';
             iniciarSeguimientoGPS();
         }
     });
     
-    // Limpiar watch al cerrar página
+    // Limpiar watch al cerrar
     window.addEventListener('beforeunload', () => {
         if(watchId) navigator.geolocation.clearWatch(watchId);
     });
     
-    // Agregar estilos de animación
+    // Estilos de animación
     const style = document.createElement('style');
     style.textContent = `
         @keyframes fadeOut {
@@ -608,6 +728,9 @@
         }
     `;
     document.head.appendChild(style);
+    
+    // Exponer función global para popups
+    window.seleccionarParadaManual = seleccionarParadaManual;
 </script>
 
 </body>
