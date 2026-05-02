@@ -3,195 +3,232 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyBus - Rastreo en Tiempo Real</title>
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <!-- FontAwesome para iconos -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <title>MyBus - Sistema de Rastreo</title>
     
+    <!-- Librerías Externas -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
     <style>
         :root {
-            --panel-bg: rgba(30, 30, 30, 0.95);
-            --text-color: #ffffff;
-            --accent-color: #00e5ff; /* Cian profesional */
-            --border-color: #444;
+            --dark-bg: rgba(25, 25, 25, 0.98);
+            --accent: #00e5ff;
+            --text: #ffffff;
         }
 
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+        
+        /* Mapa Claro para visibilidad */
+        #map { height: 100vh; width: 100%; z-index: 1; }
 
-        #map {
-            height: 100vh;
-            width: 100%;
-            z-index: 1;
-        }
-
-        /* Panel Superior: Información de Ruta */
-        .info-top {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            background: var(--panel-bg);
-            color: var(--text-color);
-            padding: 10px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            border: 1px solid var(--border-color);
+        /* Pantalla de Login / Teléfono */
+        #login-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--dark-bg);
+            z-index: 2000;
             display: flex;
-            gap: 20px;
-            min-width: 300px;
+            flex-direction: column;
+            align-items: center;
             justify-content: center;
+            color: var(--text);
         }
 
-        /* Panel Inferior: Datos de Proximidad */
-        .info-bottom {
+        .login-card {
+            background: #333;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid var(--accent);
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
+        }
+
+        input[type="tel"] {
+            padding: 12px;
+            border-radius: 5px;
+            border: none;
+            width: 200px;
+            font-size: 1.2rem;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        button {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Paneles de Información (Estilo Oscuro) */
+        .ui-panel {
             position: absolute;
-            bottom: 25px;
-            left: 50%;
-            transform: translateX(-50%);
             z-index: 1000;
-            background: var(--panel-bg);
-            color: var(--text-color);
-            padding: 15px;
-            border-radius: 12px;
+            background: var(--dark-bg);
+            color: var(--text);
+            border: 1px solid #444;
+            border-radius: 10px;
+        }
+
+        .top-status {
+            top: 15px; left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 25px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .bottom-data {
+            bottom: 30px; left: 50%;
+            transform: translateX(-50%);
             width: 90%;
             max-width: 500px;
             display: grid;
             grid-template-columns: repeat(3, 1fr);
+            padding: 15px;
             text-align: center;
-            border: 1px solid var(--border-color);
         }
 
-        .data-item {
-            display: flex;
-            flex-direction: column;
-        }
+        .data-box i { color: var(--accent); display: block; margin-bottom: 5px; }
+        .data-box span { display: block; font-size: 0.8rem; opacity: 0.7; }
+        .data-box b { font-size: 1.1rem; }
 
-        .data-item i {
-            color: var(--accent-color);
-            font-size: 1.2rem;
-            margin-bottom: 5px;
-        }
-
-        .label { font-size: 0.7rem; text-transform: uppercase; opacity: 0.8; }
-        .value { font-weight: bold; font-size: 1.1rem; }
-
-        /* Estilo para el pulso de proximidad */
-        .pulsing-icon {
-            border-radius: 50%;
-            background: var(--accent-color);
-            box-shadow: 0 0 0 rgba(0, 229, 255, 0.4);
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(0, 229, 255, 0.7); }
-            70% { box-shadow: 0 0 0 15px rgba(0, 229, 255, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(0, 229, 255, 0); }
-        }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div class="info-top">
-        <div><i class="fas fa-bus"></i> <span id="route-name">Ruta 114</span></div>
-        <div id="bus-status" style="color: #4caf50;">En Transito</div>
-    </div>
-
-    <div id="map"></div>
-
-    <div class="info-bottom">
-        <div class="data-item">
-            <i class="fas fa-clock"></i>
-            <span class="label">Tiempo</span>
-            <span class="value" id="eta">-- min</span>
-        </div>
-        <div class="data-item">
-            <i class="fas fa-route"></i>
-            <span class="label">Distancia</span>
-            <span class="value" id="distance">-- km</span>
-        </div>
-        <div class="data-item">
-            <i class="fas fa-map-marker-alt"></i>
-            <span class="label">Prox. Parada</span>
-            <span class="value" id="next-stop">Buscando...</span>
+    <!-- Pantalla de Inicio: Registro de Teléfono -->
+    <div id="login-screen">
+        <div class="login-card">
+            <i class="fas fa-bus-alt" style="font-size: 3rem; color: var(--accent); margin-bottom: 15px;"></i>
+            <h2>Bienvenido a MyBus</h2>
+            <p>Ingresa tu número de teléfono para continuar</p>
+            <input type="tel" id="phone" placeholder="88888888" maxlength="8">
+            <br>
+            <button onclick="startApp()">INGRESAR</button>
         </div>
     </div>
 
-    <!-- Leaflet JS -->
+    <!-- Interfaz de Usuario -->
+    <div id="main-ui" class="hidden">
+        <div class="ui-panel top-status">
+            <i class="fas fa-circle" style="color: #4caf50; font-size: 0.7rem;"></i>
+            <b id="route-id">RUTA 114</b>
+            <span id="user-phone-display" style="opacity: 0.6; font-size: 0.8rem;"></span>
+        </div>
+
+        <div id="map"></div>
+
+        <div class="ui-panel bottom-data">
+            <div class="data-box">
+                <i class="fas fa-history"></i>
+                <span>TIEMPO</span>
+                <b id="eta-val">-- min</b>
+            </div>
+            <div class="data-box" style="border-left: 1px solid #444; border-right: 1px solid #444;">
+                <i class="fas fa-map-signs"></i>
+                <span>DISTANCIA</span>
+                <b id="dist-val">-- km</b>
+            </div>
+            <div class="data-box">
+                <i class="fas fa-street-view"></i>
+                <span>ESTADO</span>
+                <b id="status-val">Buscando...</b>
+            </div>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // Inicializar mapa (Vista centrada en Managua)
-        const map = L.map('map').setView([12.1328, -86.2504], 14);
+        // CONFIGURACIÓN FIREBASE (Reemplaza con tus credenciales)
+        const firebaseConfig = {
+            databaseURL: "TU_URL_DE_FIREBASE"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
 
-        // Tile layer CLARO para mejor visibilidad de calles
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap'
-        }).addTo(map);
+        let map, userMarker, busMarker, proximityCircle;
+        let userPhone = "";
 
-        // Iconos personalizados
-        const busIcon = L.divIcon({
-            className: 'custom-div-icon',
-            html: "<div style='background-color:#2196f3; color:white; padding:5px; border-radius:50%; border:2px solid white;'><i class='fas fa-bus'></i></div>",
-            iconSize: [30, 30],
-            iconAnchor: [15, 15]
-        });
-
-        const userIcon = L.divIcon({
-            className: 'pulsing-icon',
-            html: "<div style='background-color:#00e5ff; width:12px; height:12px; border-radius:50%; border:2px solid white;'></div>",
-            iconSize: [12, 12],
-            iconAnchor: [6, 6]
-        });
-
-        // Capas de dibujo
-        let busMarker = L.marker([12.135, -86.255], {icon: busIcon}).addTo(map);
-        let userMarker = L.marker([12.130, -86.250], {icon: userIcon}).addTo(map);
-        let connectionLine = L.polyline([], {color: '#00e5ff', dashArray: '5, 10', weight: 2}).addTo(map);
-        let proximityCircle = L.circle([12.135, -86.255], {radius: 500, color: '#00e5ff', fillOpacity: 0.1, weight: 1}).addTo(map);
-
-        // Datos de paradas (Basado en tus coordenadas[cite: 7])
-        const paradas = [
-            { id: 3001, name: "Diesel Motors", lat: 12.1450, lng: -86.2300 },
-            { id: 3013, name: "Iglesia San José Obrero", lat: 12.1380, lng: -86.2450 }
-        ];
-
-        // Función para actualizar la UI
-        function updateTracking(busLat, busLng, userLat, userLng) {
-            // Actualizar posiciones
-            busMarker.setLatLng([busLat, busLng]);
-            userMarker.setLatLng([userLat, userLng]);
-            proximityCircle.setLatLng([busLat, busLng]);
-            connectionLine.setLatLngs([[busLat, busLng], [userLat, userLng]]);
-
-            // Calcular distancia (Haversine simple vía Leaflet)
-            const distMeters = map.distance([userLat, userLng], [busLat, busLng]);
-            document.getElementById('distance').innerText = (distMeters / 1000).toFixed(2) + " km";
-            
-            // Estimación de tiempo (Asumiendo 20km/h promedio)
-            const timeMin = Math.round((distMeters / 1000) / 20 * 60);
-            document.getElementById('eta').innerText = timeMin + " min";
-
-            // Lógica de 500 metros
-            if(distMeters <= 500) {
-                document.getElementById('next-stop').innerText = "¡Llegando!";
-                document.getElementById('next-stop').style.color = "#00e5ff";
+        // Función para validar teléfono e iniciar
+        function startApp() {
+            const phoneInput = document.getElementById('phone').value;
+            if(phoneInput.length === 8) {
+                userPhone = phoneInput;
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('main-ui').classList.remove('hidden');
+                document.getElementById('user-phone-display').innerText = "Usuario: " + userPhone;
+                initMap();
+                startTracking();
             } else {
-                document.getElementById('next-stop').innerText = paradas[0].name; // Ejemplo
-                document.getElementById('next-stop').style.color = "white";
+                alert("Por favor, ingresa un número de 8 dígitos válido para Nicaragua.");
             }
         }
 
-        // Simulación de movimiento inicial
-        updateTracking(12.135, -86.255, 12.130, -86.250);
+        function initMap() {
+            map = L.map('map').setView([12.1328, -86.2504], 14);
+            
+            // MAPA CLARO para mejor contraste con la UI oscura
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
+            userMarker = L.marker([0,0], {
+                icon: L.divIcon({className: 'user-icon', html: '<div style="background:#00e5ff; width:12px; height:12px; border-radius:50%; border:2px solid white;"></div>'})
+            }).addTo(map);
+
+            busMarker = L.marker([0,0], {
+                icon: L.divIcon({className: 'bus-icon', html: '<div style="background:#2196f3; color:white; padding:5px; border-radius:50%;"><i class="fas fa-bus"></i></div>'})
+            }).addTo(map);
+
+            proximityCircle = L.circle([0,0], {radius: 500, color: '#00e5ff', fillOpacity: 0.1}).addTo(map);
+        }
+
+        function startTracking() {
+            // 1. Obtener ubicación del usuario
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(pos => {
+                    const { latitude, longitude } = pos.coords;
+                    userMarker.setLatLng([latitude, longitude]);
+                    updateMetrics();
+                });
+            }
+
+            // 2. Escuchar ubicación del bus desde Firebase[cite: 6]
+            database.ref('bus_location/ruta_114').on('value', snapshot => {
+                const data = snapshot.val();
+                if(data) {
+                    busMarker.setLatLng([data.lat, data.lng]);
+                    proximityCircle.setLatLng([data.lat, data.lng]);
+                    updateMetrics();
+                }
+            });
+        }
+
+        function updateMetrics() {
+            if(!userMarker.getLatLng().lat || !busMarker.getLatLng().lat) return;
+
+            const dist = map.distance(userMarker.getLatLng(), busMarker.getLatLng());
+            document.getElementById('dist-val').innerText = (dist/1000).toFixed(2) + " km";
+            
+            // Tiempo estimado (20km/h)
+            const time = Math.round((dist/1000) / 20 * 60);
+            document.getElementById('eta-val').innerText = time + " min";
+
+            if(dist <= 500) {
+                document.getElementById('status-val').innerText = "¡CERCA!";
+                document.getElementById('status-val').style.color = "#00e5ff";
+            } else {
+                document.getElementById('status-val').innerText = "En camino";
+                document.getElementById('status-val').style.color = "white";
+            }
+        }
     </script>
 </body>
 </html>
