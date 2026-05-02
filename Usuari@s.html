@@ -3,272 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyBus Managua - Rastreo Real-Time</title>
+    <title>MyBus Managua - Triangulación Activa</title>
     
-    <!-- Librerías de Estilo y Mapas -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-    
-    <!-- Firebase App y Database (v8) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <style>
-        :root {
-            --bg-dark: #1a1a1a;
-            --accent: #00e5ff;
-            --text: #ffffff;
-            --gray: #333;
-        }
+        :root { --bg: #1a1a1a; --accent: #00e5ff; --text: #fff; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: sans-serif; overflow: hidden; }
 
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
-
-        /* Pantalla de Login */
+        /* Login con validación visual */
         #login-screen {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-dark);
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text);
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg); z-index: 9999; display: flex;
+            align-items: center; justify-content: center; color: var(--text);
         }
-
         .login-card {
-            background: #252525;
-            padding: 40px;
-            border-radius: 20px;
-            text-align: center;
-            border: 1px solid var(--accent);
-            box-shadow: 0 0 30px rgba(0, 229, 255, 0.1);
-            max-width: 320px;
-            width: 90%;
+            background: #252525; padding: 30px; border-radius: 20px;
+            text-align: center; border: 1px solid var(--accent); width: 85%; max-width: 320px;
+        }
+        input {
+            width: 100%; padding: 15px; margin: 20px 0; border-radius: 10px;
+            border: none; background: #333; color: white; font-size: 1.5rem; text-align: center;
+        }
+        .btn {
+            background: var(--accent); color: #000; border: none; padding: 15px;
+            border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer;
         }
 
-        input[type="tel"] {
-            width: 100%;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 10px;
-            border: none;
-            background: var(--gray);
-            color: white;
-            font-size: 1.5rem;
-            text-align: center;
-            box-sizing: border-box;
-        }
-
-        .btn-ingresar {
-            background: var(--accent);
-            color: #000;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 10px;
-            font-weight: bold;
-            width: 100%;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: 0.3s;
-        }
-
-        .btn-ingresar:hover { background: #00b8cc; }
-
-        /* Contenedor del Mapa */
+        /* Mapa y UI */
         #map { height: 100vh; width: 100%; z-index: 1; }
-
-        /* Interfaz de Usuario (Paneles) */
-        .ui-overlay {
-            position: absolute;
-            z-index: 1000;
-            background: rgba(26, 26, 26, 0.95);
-            color: var(--text);
-            border: 1px solid #444;
-            border-radius: 15px;
-            pointer-events: auto;
+        .ui-panel {
+            position: absolute; z-index: 1000; background: rgba(26, 26, 26, 0.9);
+            color: var(--text); border-radius: 15px; border: 1px solid #444;
         }
-
-        .top-bar {
-            top: 20px; left: 50%;
-            transform: translateX(-50%);
-            padding: 10px 25px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            white-space: nowrap;
-        }
-
-        .bottom-info {
-            bottom: 30px; left: 50%;
-            transform: translateX(-50%);
-            width: 90%;
-            max-width: 500px;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            padding: 20px 10px;
-            text-align: center;
-        }
-
-        .stat-item i { color: var(--accent); font-size: 1.2rem; margin-bottom: 8px; display: block; }
-        .stat-item span { font-size: 0.7rem; opacity: 0.6; text-transform: uppercase; }
-        .stat-item b { display: block; font-size: 1rem; margin-top: 4px; }
-
+        .top-status { top: 20px; left: 50%; transform: translateX(-50%); padding: 10px 20px; display: flex; gap: 15px; align-items: center; }
+        .bottom-metrics { bottom: 30px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 450px; display: grid; grid-template-columns: repeat(3, 1fr); padding: 15px; text-align: center; }
+        
+        .val { display: block; font-weight: bold; color: var(--accent); font-size: 1.1rem; }
+        .lab { font-size: 0.7rem; opacity: 0.6; }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <!-- Pantalla de Acceso -->
     <div id="login-screen">
         <div class="login-card">
-            <i class="fas fa-bus" style="font-size: 3rem; color: var(--accent);"></i>
-            <h2 style="margin-top: 15px;">MyBus</h2>
-            <p style="font-size: 0.9rem; opacity: 0.7;">Ingresa tu número de teléfono</p>
-            <input type="tel" id="phone-input" placeholder="88888888" maxlength="8">
-            <button class="btn-ingresar" onclick="validateAndStart()">INGRESAR</button>
+            <i class="fas fa-location-crosshairs" style="font-size: 2.5rem; color: var(--accent);"></i>
+            <h2>Activar Rastreo</h2>
+            <p style="font-size: 0.8rem; opacity: 0.7;">Ingresa tu número para vincular el GPS</p>
+            <input type="tel" id="phone" placeholder="88888888" maxlength="8">
+            <button class="btn" onclick="requestGPSService()">CONECTAR GPS</button>
         </div>
     </div>
 
-    <!-- Interfaz Principal -->
-    <div id="app-content" class="hidden">
-        <div class="ui-overlay top-bar">
-            <i class="fas fa-satellite-dish" style="color: #4caf50;"></i>
-            <b id="route-label">RUTA 114</b>
-            <span id="display-phone" style="font-size: 0.8rem; opacity: 0.5; border-left: 1px solid #555; padding-left: 10px;"></span>
+    <div id="app-ui" class="hidden">
+        <div class="ui-panel top-status">
+            <i class="fas fa-circle-dot" id="gps-indicator" style="color: #ff4444;"></i>
+            <b>RUTA 114</b>
         </div>
-
         <div id="map"></div>
-
-        <div class="ui-overlay bottom-info">
-            <div class="stat-item">
-                <i class="fas fa-clock"></i>
-                <span>Llegada</span>
-                <b id="eta-text">-- min</b>
-            </div>
-            <div class="stat-item" style="border-left: 1px solid #444; border-right: 1px solid #444;">
-                <i class="fas fa-road"></i>
-                <span>Distancia</span>
-                <b id="dist-text">-- km</b>
-            </div>
-            <div class="stat-item">
-                <i class="fas fa-map-marker-alt"></i>
-                <span>Estado</span>
-                <b id="status-text">Buscando...</b>
-            </div>
+        <div class="ui-panel bottom-metrics">
+            <div><span class="lab">TIEMPO</span><b class="val" id="m-time">-- min</b></div>
+            <div style="border-left: 1px solid #444; border-right: 1px solid #444;"><span class="lab">DISTANCIA</span><b class="val" id="m-dist">-- km</b></div>
+            <div><span class="lab">ESTADO</span><b class="val" id="m-status" style="font-size: 0.8rem;">ESPERANDO</b></div>
         </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
     <script>
-        // --- CONFIGURACIÓN DE FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyDGBkCnWppaprzs2gUkTj16nk6WOiLn5yQ",
             authDomain: "bus-tracker-managua.firebaseapp.com",
             databaseURL: "https://bus-tracker-managua-default-rtdb.firebaseio.com",
             projectId: "bus-tracker-managua"
         };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-        // Inicialización segura
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const database = firebase.database();
+        let map, userMarker, busMarker, polyline, proximityCircle;
 
-        let map, userMarker, busMarker, proximityCircle;
+        // --- PROCESO DE UBICACIÓN ---
+        function requestGPSService() {
+            const phone = document.getElementById('phone').value;
+            if(phone.length !== 8) return alert("Número inválido");
 
-        // --- LÓGICA DE INICIO ---
-        function validateAndStart() {
-            const phone = document.getElementById('phone-input').value;
-            
-            if(phone.length === 8) {
-                // Ocultar login, mostrar app
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('app-content').classList.remove('hidden');
-                document.getElementById('display-phone').innerText = phone;
-
-                // Inicializar componentes
-                initMap();
-                startTracking();
-            } else {
-                alert("Por favor, ingresa un número de 8 dígitos válido.");
-            }
-        }
-
-        // --- MAPA Y RASTREO ---
-        function initMap() {
-            // Mapa centrado en Managua con estilo CLARO[cite: 5, 7]
-            map = L.map('map').setView([12.1328, -86.2504], 14);
-            
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap'
-            }).addTo(map);
-
-            // Iconos personalizados
-            const busIcon = L.divIcon({
-                className: 'b-icon',
-                html: '<div style="background:#2196f3; color:white; padding:7px; border-radius:50%; border:2px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.3);"><i class="fas fa-bus"></i></div>',
-                iconSize: [34, 34], iconAnchor: [17, 17]
-            });
-
-            const userIcon = L.divIcon({
-                className: 'u-icon',
-                html: '<div style="background:#00e5ff; width:12px; height:12px; border-radius:50%; border:2px solid white; box-shadow: 0 0 8px #00e5ff;"></div>',
-                iconSize: [12, 12], iconAnchor: [6, 6]
-            });
-
-            busMarker = L.marker([12.1328, -86.2504], {icon: busIcon}).addTo(map);
-            userMarker = L.marker([12.1328, -86.2504], {icon: userIcon}).addTo(map);
-            
-            proximityCircle = L.circle([12.1328, -86.2504], {
-                radius: 500, color: '#00e5ff', fillOpacity: 0.1, weight: 1, dashArray: '5, 5'
-            }).addTo(map);
-        }
-
-        function startTracking() {
-            // Ubicación del Usuario
+            // Solicitar permiso de ubicación explícitamente
             if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(pos => {
-                    const { latitude, longitude } = pos.coords;
-                    userMarker.setLatLng([latitude, longitude]);
-                    calculateMetrics();
-                }, err => console.warn("GPS no disponible"), { enableHighAccuracy: true });
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        // Permiso concedido
+                        document.getElementById('login-screen').classList.add('hidden');
+                        document.getElementById('app-ui').classList.remove('hidden');
+                        initApp(pos.coords.latitude, pos.coords.longitude);
+                    },
+                    (err) => {
+                        alert("Error: Debes activar el GPS en tu celular para usar MyBus.");
+                    },
+                    { enableHighAccuracy: true }
+                );
             }
+        }
 
-            // Ubicación del Bus (Firebase)[cite: 6]
-            database.ref('bus_location/ruta_114').on('value', snap => {
+        function initApp(lat, lng) {
+            // Mapa Claro para ver calles de Managua[cite: 5]
+            map = L.map('map').setView([lat, lng], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+            // Marcadores e Intermitencia
+            userMarker = L.marker([lat, lng], {
+                icon: L.divIcon({className: 'u', html: '<div style="background:#00e5ff; width:14px; height:14px; border-radius:50%; border:2px solid #fff; box-shadow: 0 0 10px #00e5ff;"></div>'})
+            }).addTo(map);
+
+            busMarker = L.marker([lat, lng], {
+                icon: L.divIcon({className: 'b', html: '<div style="background:#2196f3; color:#fff; padding:6px; border-radius:50%; border:2px solid #fff;"><i class="fas fa-bus"></i></div>'})
+            }).addTo(map);
+
+            // LA LÍNEA DE TRIANGULACIÓN (Intermitente)
+            polyline = L.polyline([], {
+                color: '#00e5ff',
+                weight: 2,
+                dashArray: '10, 10', // Efecto intermitente
+                opacity: 0.7
+            }).addTo(map);
+
+            proximityCircle = L.circle([lat, lng], {radius: 500, color: '#00e5ff', fillOpacity: 0.05, weight: 1}).addTo(map);
+
+            startLiveTracking();
+        }
+
+        function startLiveTracking() {
+            // Rastrear Usuario en movimiento
+            navigator.geolocation.watchPosition(pos => {
+                const uLat = pos.coords.latitude;
+                const uLng = pos.coords.longitude;
+                userMarker.setLatLng([uLat, uLng]);
+                document.getElementById('gps-indicator').style.color = "#4caf50";
+                updateTriangulation();
+            }, null, { enableHighAccuracy: true });
+
+            // Rastrear Bus (Firebase)[cite: 6]
+            db.ref('bus_location/ruta_114').on('value', snap => {
                 const data = snap.val();
                 if(data) {
-                    const latlng = [data.lat, data.lng];
-                    busMarker.setLatLng(latlng);
-                    proximityCircle.setLatLng(latlng);
-                    calculateMetrics();
+                    busMarker.setLatLng([data.lat, data.lng]);
+                    proximityCircle.setLatLng([data.lat, data.lng]);
+                    updateTriangulation();
                 }
             });
         }
 
-        function calculateMetrics() {
-            if(!userMarker || !busMarker) return;
-            
+        function updateTriangulation() {
             const uPos = userMarker.getLatLng();
             const bPos = busMarker.getLatLng();
-            
-            if(uPos.lat === 0 || bPos.lat === 0) return;
 
-            const distance = map.distance(uPos, bPos); // metros
-            const distKm = (distance / 1000).toFixed(2);
-            const timeMin = Math.round((distance / 1000) / 20 * 60); // Asumiendo 20km/h[cite: 6]
+            // Actualizar Línea Intermitente[cite: 6]
+            polyline.setLatLngs([uPos, bPos]);
 
-            document.getElementById('dist-text').innerText = distKm + " km";
-            document.getElementById('eta-text').innerText = timeMin + " min";
+            // Cálculos
+            const dist = map.distance(uPos, bPos);
+            document.getElementById('m-dist').innerText = (dist/1000).toFixed(2) + " km";
+            document.getElementById('m-time').innerText = Math.round((dist/1000)/20*60) + " min";
 
-            // Alerta de Proximidad (500m)
-            if(distance <= 500) {
-                document.getElementById('status-text').innerText = "¡LLEGANDO!";
-                document.getElementById('status-text').style.color = "#00e5ff";
+            if(dist <= 500) {
+                document.getElementById('m-status').innerText = "CERCA";
+                document.getElementById('m-status').style.color = "#00e5ff";
             } else {
-                document.getElementById('status-text').innerText = "En Ruta";
-                document.getElementById('status-text').style.color = "white";
+                document.getElementById('m-status').innerText = "EN RUTA";
+                document.getElementById('m-status').style.color = "#00e5ff";
             }
         }
     </script>
