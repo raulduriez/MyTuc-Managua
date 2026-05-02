@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyTuc | Acceso Usuarios</title>
+    <title>MyTuc | Acceso y Radar</title>
     
-    <!-- Librerías de Estilo y Mapas -->
+    <!-- Librerías -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
-    <!-- Scripts Base -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -33,13 +32,13 @@
             overflow-x: hidden;
         }
 
-        /* --- EFECTO PORTAL (INICIO) --- */
+        /* --- ESTILO PORTAL Y LOGIN --- */
         #portalView {
             height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            transition: opacity 0.5s ease;
+            transition: 0.5s;
         }
 
         .portal-container {
@@ -73,15 +72,13 @@
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
         .logo-central {
-            width: 190px;
-            height: 190px;
+            width: 190px; height: 190px;
             border-radius: 50%;
             z-index: 10;
             object-fit: cover;
             border: 2px solid rgba(255,255,255,0.2);
         }
 
-        /* --- MODAL IDENTIFICACIÓN --- */
         .access-card {
             display: none;
             position: fixed;
@@ -98,25 +95,6 @@
             box-shadow: 0 0 50px rgba(0, 229, 255, 0.3);
         }
 
-        .input-group-custom {
-            background: rgba(0,0,0,0.4);
-            border-radius: 15px;
-            padding: 12px;
-            margin: 25px 0;
-            border: 1px solid #333;
-        }
-
-        .input-group-custom input {
-            background: transparent;
-            border: none;
-            color: var(--accent);
-            width: 100%;
-            text-align: center;
-            font-size: 1.4rem;
-            outline: none;
-            letter-spacing: 3px;
-        }
-
         #overlay {
             display: none;
             position: fixed;
@@ -126,11 +104,8 @@
             z-index: 90;
         }
 
-        /* --- INTERFAZ DE RADAR (OCULTA AL INICIO) --- */
-        #radarView {
-            display: none;
-            padding: 20px;
-        }
+        /* --- INTERFAZ RADAR --- */
+        #radarView { display: none; padding: 20px; }
 
         .glass-card {
             background: rgba(255, 255, 255, 0.05);
@@ -144,23 +119,44 @@
             height: 400px; 
             border-radius: 20px; 
             border: 2px solid var(--accent);
-            box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
         }
+
+        /* Botones Mejora */
+        .btn-control {
+            flex: 1;
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .btn-rastrear { background: var(--accent); color: #000; }
+        .btn-limpiar { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); }
 
         .arribo-panel {
             background: white;
             color: #111;
             border-radius: 20px;
-            padding: 15px;
-            margin-top: 15px;
+            padding: 20px;
+            border-left: 8px solid var(--accent);
         }
+
+        .status-indicator {
+            font-size: 0.8rem;
+            padding: 5px 12px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+        .online { background: #2ecc7122; color: #2ecc71; border: 1px solid #2ecc71; }
+        .offline { background: #e74c3c22; color: #e74c3c; border: 1px solid #e74c3c; }
     </style>
 </head>
 <body>
 
-    <!-- VISTA 1: PORTAL -->
+    <!-- VISTA PORTAL -->
     <div id="portalView">
-        <div class="portal-container" onclick="abrirModal()">
+        <div class="portal-container" onclick="mostrarLogin()">
             <div class="space-ring"></div>
             <img src="img/Logo.jpeg" class="logo-central" alt="Logo MyTuc">
         </div>
@@ -168,40 +164,40 @@
 
     <div id="overlay"></div>
 
-    <!-- MODAL DE IDENTIFICACIÓN -->
+    <!-- MODAL ACCESO -->
     <div id="modalAcceso" class="access-card">
-        <h2 class="fw-bold mb-1">IDENTIFICACIÓN</h2>
-        <p class="small opacity-50">Rastrea tu ruta en tiempo real</p>
-        
-        <div class="input-group-custom">
-            <input type="tel" id="userPhone" placeholder="88888888" maxlength="8">
-        </div>
-
-        <button class="btn btn-info w-100 py-3 fw-bold rounded-4" onclick="iniciarAplicacion()">
-            ACTIVAR RADAR
-        </button>
+        <h2 class="fw-bold">IDENTIFICACIÓN</h2>
+        <p class="small opacity-50">Ingresa tu número para activar el radar</p>
+        <input type="tel" id="userPhone" class="form-control bg-dark text-info text-center border-secondary mb-4 py-3 fs-4" placeholder="88888888" maxlength="8">
+        <button class="btn btn-info w-100 py-3 fw-bold rounded-4" onclick="entrarARadar()">ACTIVAR RADAR</button>
     </div>
 
-    <!-- VISTA 2: RADAR Y MAPA -->
+    <!-- VISTA RADAR -->
     <div id="radarView" class="container-fluid">
         <header class="text-center mb-4">
-            <h3 class="fw-bold text-info">MyTuc | Radar en Vivo</h3>
+            <h2 class="fw-bold text-info mb-1">MyTuc Radar</h2>
+            <div id="busStatus" class="status-indicator offline">Buscando buses...</div>
         </header>
 
         <div class="row g-3">
             <div class="col-md-4">
                 <div class="glass-card mb-3">
-                    <label class="small opacity-50 mb-2">BUSCAR MI PARADA</label>
-                    <input list="listaParadas" id="inputParada" class="form-control bg-dark text-white border-0 py-2" placeholder="Nombre de la parada..." onchange="consultarParadaManual()">
+                    <label class="small opacity-50 mb-2">BÚSQUEDA MANUAL DE PARADA</label>
+                    <input list="listaParadas" id="inputParada" class="form-control bg-dark text-white border-0 py-2 mb-3" placeholder="Nombre de la parada..." onchange="consultarParadaManual()">
                     <datalist id="listaParadas"></datalist>
+                    
+                    <div class="d-flex gap-2">
+                        <button class="btn-control btn-rastrear" onclick="iniciarGPS()"><i class="fas fa-sync-alt"></i> RASTREAR</button>
+                        <button class="btn-control btn-limpiar" onclick="limpiar()"><i class="fas fa-eraser"></i> LIMPIAR</button>
+                    </div>
                 </div>
 
                 <div class="glass-card">
-                    <h6 class="small fw-bold mb-3"><i class="fas fa-comments me-2"></i> CHAT COMUNIDAD</h6>
-                    <div id="chatDisplay" style="height: 140px; overflow-y: auto; font-size: 0.85rem;" class="mb-2"></div>
+                    <h6 class="small fw-bold mb-3">CHAT COMUNIDAD</h6>
+                    <div id="chatDisplay" style="height: 150px; overflow-y: auto;" class="mb-2 small"></div>
                     <div class="input-group">
-                        <input type="text" id="chatInput" class="form-control bg-dark text-white border-0" placeholder="Mensaje...">
-                        <button onclick="enviarMensaje()" class="btn btn-info"><i class="fas fa-paper-plane"></i></button>
+                        <input type="text" id="chatInput" class="form-control bg-dark text-white border-0" placeholder="Escribe...">
+                        <button onclick="enviarMsg()" class="btn btn-info"><i class="fas fa-paper-plane"></i></button>
                     </div>
                 </div>
             </div>
@@ -209,9 +205,14 @@
             <div class="col-md-8">
                 <div id="mapa"></div>
                 
-                <div id="arriboPanel" class="arribo-panel shadow-lg" style="display:none;">
+                <!-- PANEL DE ARRIBO MEJORADO -->
+                <div id="arriboPanel" class="arribo-panel shadow-lg mt-3" style="display:none;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold m-0 text-uppercase">Información de Arribo</h6>
+                        <span id="unidadBadge" class="badge bg-dark">--</span>
+                    </div>
                     <table class="table table-sm mb-0">
-                        <thead class="small"><tr><th>Punto</th><th>Distancia</th><th>Estado</th></tr></thead>
+                        <thead><tr class="small text-muted"><th>PUNTO</th><th>DISTANCIA</th><th>TIEMPO ESTIMADO</th></tr></thead>
                         <tbody id="tablaBody" class="fw-bold"></tbody>
                     </table>
                 </div>
@@ -220,91 +221,118 @@
     </div>
 
     <script>
-        // FIREBASE
         const firebaseConfig = { apiKey: "AIzaSyDGBkCnWppaprzs2gUkTj16nk6WOiLn5yQ", databaseURL: "https://bus-tracker-managua-default-rtdb.firebaseio.com" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // LÓGICA DE TRANSICIÓN
-        function abrirModal() {
+        const map = L.map('mapa', { zoomControl: false }).setView([12.1150, -86.2363], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        let userMarker, busMarker, paradaMarker, linePB, miPos = null, paradaSeleccionada = null;
+
+        // Cargar Paradas
+        if(window.json_edcion_paradas_Mang_1) {
+            const list = document.getElementById('listaParadas');
+            json_edcion_paradas_Mang_1.features.forEach(f => {
+                const opt = document.createElement('option');
+                opt.value = f.properties.Nom_Parada;
+                list.appendChild(opt);
+            });
+        }
+
+        function mostrarLogin() {
             document.getElementById('modalAcceso').style.display = 'block';
             document.getElementById('overlay').style.display = 'block';
         }
 
-        function iniciarAplicacion() {
+        function entrarARadar() {
             const tel = document.getElementById('userPhone').value;
             if(tel.length < 8) return alert("Ingrese un número válido");
-
-            // Ocultar Portal y Mostrar Radar
             document.getElementById('portalView').style.display = 'none';
             document.getElementById('modalAcceso').style.display = 'none';
             document.getElementById('overlay').style.display = 'none';
             document.getElementById('radarView').style.display = 'block';
-
-            // Inicializar Mapa y Datos
-            setTimeout(() => {
-                map.invalidateSize();
-                iniciarRadarAutomatico();
-            }, 200);
+            setTimeout(() => { map.invalidateSize(); iniciarGPS(); }, 300);
         }
 
-        // LÓGICA DEL MAPA (Leaflet)
-        const map = L.map('mapa', { zoomControl: false }).setView([12.1150, -86.2363], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-        let userMarker, busMarker, paradaMarker, linePB, miPos = null;
-        let paradaSeleccionada = null;
-
-        function cargarListaParadas() {
-            const list = document.getElementById('listaParadas');
-            if(window.json_edcion_paradas_Mang_1) {
-                json_edcion_paradas_Mang_1.features.forEach(f => {
-                    const opt = document.createElement('option');
-                    opt.value = f.properties.Nom_Parada;
-                    list.appendChild(opt);
-                });
-            }
+        function limpiar() {
+            document.getElementById('inputParada').value = "";
+            paradaSeleccionada = null;
+            if(paradaMarker) map.removeLayer(paradaMarker);
+            if(linePB) map.removeLayer(linePB);
+            document.getElementById('arriboPanel').style.display = 'none';
+            iniciarGPS();
         }
-        cargarListaParadas();
 
-        function iniciarRadarAutomatico() {
+        function iniciarGPS() {
             navigator.geolocation.getCurrentPosition(pos => {
                 miPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                let minDist = Infinity;
-                json_edcion_paradas_Mang_1.features.forEach(f => {
-                    const d = calcularDist(miPos.lat, miPos.lng, f.geometry.coordinates[1], f.geometry.coordinates[0]);
-                    if (d < minDist) { minDist = d; paradaSeleccionada = f; }
-                });
-                document.getElementById('inputParada').value = paradaSeleccionada.properties.Nom_Parada;
+                if (!paradaSeleccionada) {
+                    let minDist = Infinity;
+                    json_edcion_paradas_Mang_1.features.forEach(f => {
+                        const d = calcularDist(miPos.lat, miPos.lng, f.geometry.coordinates[1], f.geometry.coordinates[0]);
+                        if (d < minDist) { minDist = d; paradaSeleccionada = f; }
+                    });
+                    document.getElementById('inputParada').value = paradaSeleccionada.properties.Nom_Parada;
+                }
                 document.getElementById('arriboPanel').style.display = 'block';
-                actualizarInterfaz();
+                actualizarMapa();
             }, null, { enableHighAccuracy: true });
         }
 
-        function actualizarInterfaz() {
+        function consultarParadaManual() {
+            const val = document.getElementById('inputParada').value;
+            const res = json_edcion_paradas_Mang_1.features.find(f => f.properties.Nom_Parada === val);
+            if(res) {
+                paradaSeleccionada = res;
+                document.getElementById('arriboPanel').style.display = 'block';
+                actualizarMapa();
+            }
+        }
+
+        // MONITOREO DE BUSES EN TIEMPO REAL
+        db.ref('buses').on('value', snap => {
+            const buses = snap.val();
+            const indicator = document.getElementById('busStatus');
+            if(buses && Object.keys(buses).length > 0) {
+                indicator.innerHTML = `<i class="fas fa-circle"></i> BUS ACTIVO EN RUTA`;
+                indicator.className = "status-indicator online";
+                if(paradaSeleccionada) renderTabla(buses);
+            } else {
+                indicator.innerHTML = `<i class="fas fa-clock"></i> SIN BUSES EN LÍNEA`;
+                indicator.className = "status-indicator offline";
+            }
+        });
+
+        function renderTabla(buses) {
+            const busId = Object.keys(buses)[0];
+            const bus = buses[busId];
             const pLat = paradaSeleccionada.geometry.coordinates[1];
             const pLng = paradaSeleccionada.geometry.coordinates[0];
             
-            if(userMarker) map.removeLayer(userMarker);
-            userMarker = L.circleMarker([miPos.lat, miPos.lng], { color: '#00e5ff', radius: 8 }).addTo(map);
+            const dBP = calcularDist(bus.lat, bus.lng, pLat, pLng);
+            const dUP = calcularDist(miPos.lat, miPos.lng, pLat, pLng);
+
+            document.getElementById('unidadBadge').innerText = "UNIDAD: " + busId;
+            document.getElementById('tablaBody').innerHTML = `
+                <tr><td>MI POSICIÓN</td><td>${(dUP*1000).toFixed(0)}m</td><td class="text-primary">ESPERANDO</td></tr>
+                <tr class="table-info"><td>BUS PRÓXIMO</td><td>${(dBP*1000).toFixed(0)}m</td><td>${dBP < 0.4 ? 'LLEGANDO' : Math.round(dBP*3)+' min'}</td></tr>`;
+
+            if(busMarker) busMarker.setLatLng([bus.lat, bus.lng]);
+            else busMarker = L.marker([bus.lat, bus.lng], {icon: L.divIcon({html: '<i class="fas fa-bus text-success fa-2x"></i>', className: 'bg-transparent'})}).addTo(map);
             
-            if(paradaMarker) map.removeLayer(paradaMarker);
-            paradaMarker = L.marker([pLat, pLng]).addTo(map);
+            if(linePB) map.removeLayer(linePB);
+            linePB = L.polyline([[bus.lat, bus.lng], [pLat, pLng]], {color: '#2ECC71', weight: 4, dashArray: '10, 10'}).addTo(map);
+        }
+
+        function actualizarMapa() {
+            const pLat = paradaSeleccionada.geometry.coordinates[1];
+            const pLng = paradaSeleccionada.geometry.coordinates[0];
+            if(userMarker) userMarker.setLatLng([miPos.lat, miPos.lng]);
+            else userMarker = L.circleMarker([miPos.lat, miPos.lng], { color: '#00e5ff', radius: 8 }).addTo(map);
+            if(paradaMarker) paradaMarker.setLatLng([pLat, pLng]);
+            else paradaMarker = L.marker([pLat, pLng]).addTo(map);
             map.setView([pLat, pLng], 15);
-
-            db.ref('buses').on('value', snap => {
-                const buses = snap.val();
-                if(!buses) return;
-                const bus = Object.values(buses)[0];
-                const dBP = calcularDist(bus.lat, bus.lng, pLat, pLng);
-                
-                document.getElementById('tablaBody').innerHTML = `
-                    <tr><td>TU POSICIÓN</td><td>${(calcularDist(miPos.lat, miPos.lng, pLat, pLng)*1000).toFixed(0)}m</td><td>En espera</td></tr>
-                    <tr class="table-info"><td>BUS PRÓXIMO</td><td>${(dBP*1000).toFixed(0)}m</td><td>${dBP < 0.5 ? 'Llegando' : 'En camino'}</td></tr>`;
-
-                if(busMarker) busMarker.setLatLng([bus.lat, bus.lng]);
-                else busMarker = L.marker([bus.lat, bus.lng], { icon: L.divIcon({ html: '<i class="fas fa-bus text-success fa-2x"></i>', className: 'bg-transparent' }) }).addTo(map);
-            });
         }
 
         function calcularDist(lat1, lon1, lat2, lon2) {
@@ -315,21 +343,18 @@
             return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
         }
 
-        // CHAT
-        function enviarMensaje() {
-            const msg = document.getElementById('chatInput').value;
-            const tel = document.getElementById('userPhone').value;
-            if(!msg) return;
-            db.ref("chat_comunidad").push({ perfil: "Usuario", mensaje: msg, telefono: tel, timestamp: Date.now() });
-            document.getElementById('chatInput').value = "";
+        function enviarMsg() {
+            const m = document.getElementById('chatInput').value;
+            const t = document.getElementById('userPhone').value;
+            if(m) { db.ref("chat_comunidad").push({ mensaje: m, telefono: t, timestamp: Date.now() }); document.getElementById('chatInput').value = ""; }
         }
 
         db.ref("chat_comunidad").limitToLast(10).on("child_added", snap => {
-            const m = snap.val();
+            const d = snap.val();
             const div = document.createElement("div");
-            div.innerHTML = `<b style="color:var(--accent)">${m.telefono.slice(-4)}:</b> ${m.mensaje}`;
-            document.getElementById("chatDisplay").appendChild(div);
-            document.getElementById("chatDisplay").scrollTop = document.getElementById("chatDisplay").scrollHeight;
+            div.innerHTML = `<b class="text-info">${d.telefono.slice(-4)}:</b> ${d.mensaje}`;
+            document.getElementById('chatDisplay').appendChild(div);
+            document.getElementById('chatDisplay').scrollTop = document.getElementById('chatDisplay').scrollHeight;
         });
     </script>
 </body>
