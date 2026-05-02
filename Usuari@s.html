@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyBus - Triangulación 500m Final</title>
+    <title>MyBus - Inicio Limpio</title>
 
+    <!-- Leaflet & Search Plugin -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-search@3.0.2/dist/leaflet-search.min.css" />
     
@@ -13,78 +14,76 @@
             --azul-oscuro: #000428;
             --azul-deep: #004e92;
             --celeste: #00A8E8;
+            --verde-neon: #2ECC71;
             --rojo-norte: #FF0000;
         }
 
         body { margin: 0; font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; overflow: hidden; background: #f4f7f6; }
 
-        /* MODAL DE REGISTRO */
+        /* 1. CUADRO DE DIALOGO INICIAL (REQUISITOS) */
         #modal-registro {
-            position: fixed; inset: 0; background: rgba(0,4,40,0.98);
+            position: fixed; inset: 0; background: var(--azul-oscuro);
             display: flex; justify-content: center; align-items: center; z-index: 9999;
         }
-        .form-registro { background: white; padding: 40px; border-radius: 20px; width: 380px; text-align: center; }
+        .form-registro {
+            background: white; padding: 40px; border-radius: 20px; width: 350px; text-align: center;
+            border-top: 8px solid var(--celeste);
+        }
 
-        /* SIDEBAR */
+        /* 2. PANEL LATERAL (SIDEBAR) */
         .sidebar { width: 380px; background: white; display: flex; flex-direction: column; border-right: 1px solid #ddd; z-index: 1000; }
-        .sidebar-content { padding: 25px; flex: 1; overflow-y: auto; }
+        .sidebar-content { padding: 20px; flex: 1; overflow-y: auto; }
 
-        .section-box { background: #fff; border: 2px solid #eee; padding: 15px; border-radius: 12px; margin-bottom: 20px; }
-        h3 { font-size: 0.8rem; margin: 0 0 12px 0; color: var(--azul-deep); text-transform: uppercase; letter-spacing: 1px; }
+        .section-box { background: #fff; border: 2px solid #eee; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
+        h3 { font-size: 0.8rem; margin: 0 0 10px 0; color: var(--azul-deep); text-transform: uppercase; }
 
-        /* BUSCADOR MANUAL MEJORADO */
+        /* BUSCADOR MANUAL */
         #search-wrapper { 
-            background: #eef7ff; padding: 5px; border-radius: 8px; border: 2px solid var(--celeste);
-            position: relative; height: 50px; display: flex; align-items: center;
+            background: #eef7ff; border: 2px solid var(--celeste); border-radius: 8px; 
+            min-height: 45px; display: flex; align-items: center;
         }
-        
-        /* Forzar que el buscador ocupe todo el ancho y sea escribible */
-        .leaflet-control-search { width: 100% !important; margin: 0 !important; box-shadow: none !important; background: transparent !important; border: none !important; }
-        .leaflet-control-search .search-input { 
-            display: block !important; width: 90% !important; border: none !important; 
-            padding: 12px !important; font-size: 1rem !important; outline: none !important;
-        }
+        .leaflet-control-search { width: 100% !important; margin: 0 !important; background: transparent !important; border: none !important; box-shadow: none !important; }
+        .leaflet-control-search .search-input { width: 90% !important; border: none !important; padding: 10px !important; outline: none !important; }
 
-        .btn-main { width: 100%; padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: 0.2s; }
-        .btn-auto { background: var(--azul-oscuro); color: white; margin-bottom: 15px; }
+        .btn-main { width: 100%; padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: 0.3s; }
+        .btn-auto { background: var(--azul-deep); color: white; margin-bottom: 10px; }
 
-        #map { flex: 1; }
+        #map { flex: 1; z-index: 1; }
 
-        .stop-label { background: white; border: 2px solid var(--azul-deep); border-radius: 50%; text-align: center; font-weight: bold; font-size: 11px; line-height: 24px; width: 26px; height: 26px; color: black; }
-        .info-panel { font-size: 0.9rem; line-height: 1.6; color: #333; }
-        .highlight { color: var(--azul-deep); font-weight: bold; }
+        /* ICONOS Y ETIQUETAS */
+        .stop-label { background: white; border: 2px solid var(--azul-deep); border-radius: 50%; text-align: center; font-weight: bold; font-size: 11px; line-height: 24px; width: 26px; height: 26px; }
+        .info-panel { font-size: 0.9rem; color: #333; margin-top: 10px; }
     </style>
 </head>
 <body>
 
+<!-- Pantalla de Bienvenida y Requisitos -->
 <div id="modal-registro">
     <div class="form-registro">
-        <img src="img/logo2.jpeg" alt="MyBus" style="width: 150px; margin-bottom: 25px;">
-        <h2>Acceso al Sistema</h2>
-        <input type="tel" id="input-phone" placeholder="Ingresa tu teléfono" style="width:100%; padding:15px; border:2px solid #ddd; border-radius:10px; margin-bottom:20px;">
-        <button class="btn-main btn-auto" onclick="autorizarAcceso()">ACTIVAR GPS Y ENTRAR</button>
+        <img src="img/logo2.jpeg" alt="MyBus" style="width: 140px; margin-bottom: 20px;">
+        <h2>Registro</h2>
+        <input type="tel" id="user-phone" placeholder="Número de Teléfono" style="width:100%; padding:12px; margin-bottom:20px; border-radius:5px; border:1px solid #ccc;">
+        <button class="btn-main btn-auto" onclick="iniciarSistema()">ACTIVAR GPS Y ENTRAR</button>
     </div>
 </div>
 
 <aside class="sidebar">
     <div class="sidebar-content">
         <div class="section-box">
-            <h3>Detección Automática (500m)</h3>
-            <button class="btn-main btn-auto" onclick="triangularAutomatico()">UBICAR PARADA MÁS CERCANA</button>
+            <h3>Búsqueda Automática</h3>
+            <button class="btn-main btn-auto" onclick="autoTriangular()">PARADA CERCANA (500M)</button>
         </div>
 
         <div class="section-box">
-            <h3>Consulta Manual de Parada</h3>
-            <div id="search-wrapper">
-                <!-- Aquí se inyectará el buscador dinámicamente -->
-            </div>
-            <div id="info-manual" class="info-panel" style="margin-top:15px;"></div>
+            <h3>Búsqueda Manual (Escribir)</h3>
+            <div id="search-wrapper"></div>
+            <div id="info-manual" class="info-panel"></div>
         </div>
 
-        <div class="section-box">
-            <h3>Información de Buses</h3>
+        <div class="section-box" style="border-left: 5px solid var(--verde-neon);">
+            <h3>Buses en Rango Real</h3>
             <div id="lista-buses" class="info-panel">
-                <p style="color:#999;">Active ubicación para calcular...</p>
+                <p style="color:#999;">Esperando ubicación...</p>
             </div>
         </div>
     </div>
@@ -95,107 +94,86 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-search@3.0.2/dist/leaflet-search.min.js"></script>
 
-<!-- IMPORTANTE: Este archivo debe estar en la misma carpeta -->
+<!-- Tu archivo de paradas de Managua -->
 <script src="PUNTOS_MANAGUA_01052026_1.js"></script>
 
 <script>
     var map = L.map('map', {zoomControl: false}).setView([12.1328, -86.2504], 14);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-    var userMarker, lineaDashed, capaParadas;
     var miUbicacion = null;
+    var userMarker, trianguloLine, capaGeoJSON;
 
-    // Flecha Roja Norte
-    var iconNorte = L.divIcon({
-        className: 'norte-icon',
-        html: '<div style="color:red; font-size:35px; transform: rotate(-45deg); text-shadow: 1px 1px 2px #000;">▲</div>',
+    // Icono Flecha Norte (Rojo)
+    var norteIcon = L.divIcon({
+        className: 'user-icon',
+        html: '<div style="color:red; font-size:35px; transform: rotate(-45deg);">▲</div>',
         iconSize: [30, 30]
     });
 
-    function autorizarAcceso() {
+    function iniciarSistema() {
+        if(document.getElementById('user-phone').value.length < 8) return alert("Número inválido");
         document.getElementById('modal-registro').style.display = 'none';
-        iniciarSeguimientoGPS();
-        inicializarBuscador(); // Iniciamos el buscador después de entrar
-    }
-
-    function iniciarSeguimientoGPS() {
+        
+        // Activar seguimiento en tiempo real
         navigator.geolocation.watchPosition(pos => {
             miUbicacion = [pos.coords.latitude, pos.coords.longitude];
             if(userMarker) map.removeLayer(userMarker);
-            userMarker = L.marker(miUbicacion, {icon: iconNorte}).addTo(map);
-            if(!map.centrado) { map.setView(miUbicacion, 16); map.centrado = true; }
+            userMarker = L.marker(miUbicacion, {icon: norteIcon}).addTo(map);
+            if(!map.centrado) { map.setView(miUbicacion, 17); map.centrado = true; }
         }, null, {enableHighAccuracy: true});
-    }
 
-    // Cargamos la capa de paradas desde la variable del archivo .js
-    function cargarCapaParadas() {
-        if (typeof PUNTOS_MANAGUA_01052026_1 === 'undefined') {
-            console.error("Error: El archivo PUNTOS_MANAGUA_01052026_1.js no se ha cargado correctamente.");
-            return null;
-        }
-        return L.geoJSON(PUNTOS_MANAGUA_01052026_1, {
-            pointToLayer: function(feature, latlng) {
-                return L.marker(latlng, {
-                    icon: L.divIcon({
-                        className: 'stop-label',
-                        html: `<div>${feature.properties.NUM_PARADA || 'P'}</div>`
-                    })
-                });
-            }
-        }).addTo(map);
+        inicializarBuscador();
     }
 
     function inicializarBuscador() {
-        capaParadas = cargarCapaParadas();
-        if (!capaParadas) return;
+        // Cargar paradas con círculos numerados
+        capaGeoJSON = L.geoJSON(PUNTOS_MANAGUA_01052026_1, {
+            pointToLayer: (feature, latlng) => L.marker(latlng, {
+                icon: L.divIcon({ className: 'stop-label', html: `<div>${feature.properties.NUM_PARADA || 'P'}</div>` })
+            })
+        }).addTo(map);
 
-        var controlBuscador = new L.Control.Search({
+        // Configurar buscador manual escribible
+        var searchControl = new L.Control.Search({
             container: 'search-wrapper',
-            layer: capaParadas,
+            layer: capaGeoJSON,
             propertyName: 'name',
             marker: false,
             initial: false,
             collapsed: false,
-            autoType: true,
-            minLength: 1,
-            textPlaceholder: 'Escriba nombre de parada...',
-            moveToLocation: function(latlng, title) {
-                triangular([latlng.lat, latlng.lng], title);
-            }
+            textPlaceholder: 'Buscar parada...',
+            moveToLocation: (latlng, title) => ejecutarTriangulacion([latlng.lat, latlng.lng], title)
         });
-        map.addControl(controlBuscador);
+        map.addControl(searchControl);
     }
 
-    function triangular(targetCoords, nombre) {
-        if(!miUbicacion) return alert("Esperando señal de GPS...");
-        if(lineaDashed) map.removeLayer(lineaDashed);
+    function ejecutarTriangulacion(destino, nombre) {
+        if(!miUbicacion) return;
+        if(trianguloLine) map.removeLayer(trianguloLine);
 
-        lineaDashed = L.polyline([miUbicacion, targetCoords], {
-            color: '#004e92', dashArray: '10, 15', weight: 3
+        // Línea descontinua de triangulación
+        trianguloLine = L.polyline([miUbicacion, destino], {
+            color: '#004e92', weight: 3, dashArray: '10, 15'
         }).addTo(map);
 
-        let distancia = map.distance(miUbicacion, targetCoords);
-        map.fitBounds(lineaDashed.getBounds(), {padding: [50, 50]});
+        let distancia = map.distance(miUbicacion, destino);
+        map.fitBounds(trianguloLine.getBounds(), {padding: [50, 50]});
 
-        document.getElementById('info-manual').innerHTML = `
-            <div class="highlight">📍 Parada: ${nombre}</div>
-            Distancia real: ${distancia.toFixed(0)} metros
-        `;
+        document.getElementById('info-manual').innerHTML = `<b>${nombre}</b><br>Distancia: ${distancia.toFixed(0)}m`;
 
+        // Lógica de 500 metros
+        let listBus = document.getElementById('lista-buses');
         if(distancia <= 500) {
-            document.getElementById('lista-buses').innerHTML = `
-                <p class="highlight" style="color:green;">✓ EN RANGO (500m)</p>
-                <p>Bus 102: 4 min | Bus 110: 9 min</p>
-            `;
+            listBus.innerHTML = `<b style="color:green;">✓ EN RANGO</b><br>Bus 102: 4 min<br>Bus 110: 9 min`;
         } else {
-            document.getElementById('lista-buses').innerHTML = `<p style="color:red;">Fuera de rango (>500m)</p>`;
+            listBus.innerHTML = `<b style="color:red;">FUERA DE RANGO (500m)</b>`;
         }
     }
 
-    function triangularAutomatico() {
+    function autoTriangular() {
         if(!miUbicacion) return;
-        let dMin = Infinity;
-        let closest = null;
+        let dMin = Infinity, closest = null;
 
         PUNTOS_MANAGUA_01052026_1.features.forEach(f => {
             let coords = [f.geometry.coordinates[1], f.geometry.coordinates[0]];
@@ -204,12 +182,11 @@
         });
 
         if(closest && dMin <= 500) {
-            triangular(closest.coords, closest.name);
+            ejecutarTriangulacion(closest.coords, closest.name);
         } else {
-            alert("No hay paradas a menos de 500 metros de tu ubicación actual.");
+            alert("No hay paradas a menos de 500m.");
         }
     }
 </script>
-
 </body>
 </html>
