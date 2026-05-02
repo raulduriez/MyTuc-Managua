@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>MyBus - Triangulación en Tiempo Real (500m)</title>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -14,55 +14,170 @@
             --azul-deep: #004e92;
             --celeste: #00A8E8;
             --rojo-norte: #FF0000;
+            --verde-exito: #28a745;
         }
 
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; overflow: hidden; background: #f4f7f6; }
+        * { box-sizing: border-box; }
+        
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; height: 100vh; overflow: hidden; background: #f4f7f6; }
 
         /* MODAL DE REGISTRO */
         #modal-registro {
             position: fixed; inset: 0; background: rgba(0,4,40,0.98);
             display: flex; justify-content: center; align-items: center; z-index: 9999;
+            backdrop-filter: blur(5px);
         }
         .form-registro {
             background: white; padding: 40px; border-radius: 20px; width: 380px; text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        .form-registro img {
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 25px;
         }
 
         /* SIDEBAR */
-        .sidebar { width: 380px; background: white; display: flex; flex-direction: column; border-right: 1px solid #ddd; z-index: 1000; }
+        .sidebar { width: 380px; background: white; display: flex; flex-direction: column; border-right: 1px solid #ddd; z-index: 1000; box-shadow: 2px 0 5px rgba(0,0,0,0.05); }
         .sidebar-content { padding: 25px; flex: 1; overflow-y: auto; }
 
-        .section-box { background: #fff; border: 2px solid #eee; padding: 15px; border-radius: 12px; margin-bottom: 20px; }
-        h3 { font-size: 0.8rem; margin: 0 0 12px 0; color: var(--azul-deep); text-transform: uppercase; letter-spacing: 1px; }
+        .section-box { background: #fff; border: 2px solid #e9ecef; padding: 20px; border-radius: 12px; margin-bottom: 20px; transition: all 0.3s; }
+        .section-box:hover { border-color: var(--celeste); box-shadow: 0 3px 10px rgba(0,168,232,0.1); }
+        
+        h3 { font-size: 0.85rem; margin: 0 0 15px 0; color: var(--azul-deep); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; }
 
-        /* BUSCADOR MANUAL MEJORADO */
+        /* ESTILOS DEL BUSCADOR */
         #search-wrapper { 
-            background: #eef7ff; padding: 5px; border-radius: 8px; border: 2px solid var(--celeste);
-            position: relative; height: 45px; 
+            background: #f8f9fa; 
+            border-radius: 8px; 
+            border: 2px solid var(--celeste);
+            overflow: hidden;
         }
-        /* Forzar visibilidad del input de búsqueda */
+        
+        .leaflet-control-search {
+            width: 100% !important;
+            background: transparent !important;
+            border: none !important;
+        }
+        
         .leaflet-control-search .search-input {
-            display: block !important; width: 100% !important; border: none !important; 
-            padding: 10px !important; margin: 0 !important; background: transparent !important;
+            display: block !important;
+            width: 100% !important;
+            padding: 12px !important;
+            font-size: 14px !important;
+            border: none !important;
+            background: white !important;
+            outline: none !important;
+        }
+        
+        .leaflet-control-search .search-button {
+            display: none !important;
+        }
+        
+        .search-tip {
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .search-tip .search-tip-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s;
+        }
+        
+        .search-tip .search-tip-item:hover {
+            background: #e3f2fd;
         }
 
-        .btn-main { width: 100%; padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: 0.2s; }
-        .btn-auto { background: var(--azul-oscuro); color: white; margin-bottom: 15px; }
+        .btn-main { 
+            width: 100%; padding: 14px; border: none; border-radius: 8px; 
+            cursor: pointer; font-weight: bold; font-size: 1rem; transition: all 0.3s; 
+            font-family: inherit;
+        }
+        
+        .btn-auto { 
+            background: linear-gradient(135deg, var(--azul-oscuro), var(--azul-deep)); 
+            color: white; 
+            margin-bottom: 15px;
+        }
+        
+        .btn-auto:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,68,146,0.3);
+        }
+        
+        .btn-auto:active {
+            transform: translateY(0);
+        }
 
-        #map { flex: 1; }
+        #map { flex: 1; z-index: 1; }
 
-        /* ICONOS */
-        .stop-label { background: white; border: 2px solid var(--azul-deep); border-radius: 50%; text-align: center; font-weight: bold; font-size: 11px; line-height: 24px; width: 26px; height: 26px; color: black; }
-        .info-panel { font-size: 0.9rem; line-height: 1.6; color: #333; }
-        .highlight { color: var(--azul-deep); font-weight: bold; }
+        /* ICONOS Y ESTILOS DE PARADAS */
+        .stop-label {
+            background: white; 
+            border: 2px solid var(--azul-deep); 
+            border-radius: 50%; 
+            text-align: center; 
+            font-weight: bold; 
+            font-size: 11px; 
+            line-height: 26px; 
+            width: 30px; 
+            height: 30px; 
+            color: var(--azul-deep);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+        
+        .stop-label:hover {
+            transform: scale(1.1);
+            z-index: 1000;
+        }
+        
+        .info-panel { 
+            font-size: 0.9rem; 
+            line-height: 1.6; 
+            color: #495057;
+        }
+        
+        .highlight { 
+            color: var(--azul-deep); 
+            font-weight: bold; 
+        }
+        
+        .success-text {
+            color: var(--verde-exito);
+            font-weight: bold;
+        }
+        
+        .warning-text {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 10px;
+            color: var(--azul-deep);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar { width: 320px; }
+            .sidebar-content { padding: 15px; }
+            .section-box { padding: 15px; }
+        }
     </style>
 </head>
 <body>
 
 <div id="modal-registro">
     <div class="form-registro">
-        <img src="img/logo2.jpeg" alt="MyBus" style="width: 150px; margin-bottom: 25px;">
+        <img src="img/logo2.jpeg" alt="MyBus" onerror="this.src='https://via.placeholder.com/150?text=MyBus'">
         <h2>Acceso al Sistema</h2>
-        <input type="tel" id="input-phone" placeholder="Ingresa tu teléfono" style="width:100%; padding:15px; border:2px solid #ddd; border-radius:10px; margin-bottom:20px;">
+        <input type="tel" id="input-phone" placeholder="Ingresa tu teléfono" style="width:100%; padding:15px; border:2px solid #ddd; border-radius:10px; margin-bottom:20px; font-size:16px;">
         <button class="btn-main btn-auto" onclick="autorizarAcceso()">ACTIVAR GPS Y ENTRAR</button>
     </div>
 </div>
@@ -70,22 +185,25 @@
 <aside class="sidebar">
     <div class="sidebar-content">
         <div class="section-box">
-            <h3>Automático (500m)</h3>
-            <button class="btn-main btn-auto" onclick="triangularAutomatico()">PARADA MÁS CERCANA</button>
-        </div>
-
-        <div class="section-box">
-            <h3>Consulta Manual</h3>
-            <div id="search-wrapper">
-                <!-- El buscador se inyectará aquí con JS -->
+            <h3>🚌 Automático (500m)</h3>
+            <button class="btn-main btn-auto" onclick="triangularAutomatico()">📍 PARADA MÁS CERCANA</button>
+            <div id="gps-status" style="font-size: 12px; margin-top: 10px; color: #6c757d; text-align: center;">
+                ⚡ Esperando GPS...
             </div>
-            <div id="info-manual" class="info-panel" style="margin-top:15px;"></div>
         </div>
 
         <div class="section-box">
-            <h3>Buses Cercanos</h3>
+            <h3>🔍 Consulta Manual</h3>
+            <div id="search-wrapper"></div>
+            <div id="info-manual" class="info-panel" style="margin-top:15px;">
+                <p style="color:#999; text-align:center;">🔎 Selecciona una parada en el mapa o búscala por nombre</p>
+            </div>
+        </div>
+
+        <div class="section-box">
+            <h3>🚏 Buses Cercanos</h3>
             <div id="lista-buses" class="info-panel">
-                <p style="color:#999;">Active ubicación para calcular...</p>
+                <p style="color:#999; text-align:center;">📍 Activa ubicación para calcular</p>
             </div>
         </div>
     </div>
@@ -96,111 +214,400 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-search@3.0.2/dist/leaflet-search.min.js"></script>
 
-<!-- Carga de tu archivo real de paradas -->
+<!-- Carga de tu archivo real de paradas - Asegúrate que la variable se llame PUNTOS_MANAGUA_01052026_1 -->
 <script src="PUNTOS_MANAGUA_01052026_1.js"></script>
 
 <script>
-    var map = L.map('map', {zoomControl: false}).setView([12.1328, -86.2504], 14);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    // ========== INICIALIZACIÓN DEL MAPA ==========
+    var map = L.map('map', {
+        zoomControl: true,
+        zoomSnap: 0.5
+    }).setView([12.1328, -86.2504], 14);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
 
+    // ========== VARIABLES GLOBALES ==========
     var userMarker, lineaDashed, capaParadas;
     var miUbicacion = null;
+    var watchId = null;
+    var paradasLista = []; // Para almacenar paradas con nombres formateados
 
-    // Icono Norte Rojo
+    // Icono Norte Rojo (tu ubicación)
     var iconNorte = L.divIcon({
         className: 'norte-icon',
-        html: '<div style="color:red; font-size:35px; transform: rotate(-45deg); text-shadow: 1px 1px 2px #000;">▲</div>',
-        iconSize: [30, 30]
+        html: '<div style="color:#FF0000; font-size:40px; transform: rotate(-45deg); text-shadow: 2px 2px 3px rgba(0,0,0,0.3);">▲</div>',
+        iconSize: [30, 30],
+        popupAnchor: [0, -15]
     });
 
+    // ========== FUNCIÓN PARA NORMALIZAR PARADAS ==========
+    function normalizarParadas() {
+        if (!window.PUNTOS_MANAGUA_01052026_1 || !window.PUNTOS_MANAGUA_01052026_1.features) {
+            console.error("Error: No se encontró el objeto PUNTOS_MANAGUA_01052026_1");
+            document.getElementById('info-manual').innerHTML = '<p style="color:red;">❌ Error: No se encontraron datos de paradas. Verifica el archivo PUNTOS_MANAGUA_01052026_1.js</p>';
+            return false;
+        }
+        
+        console.log("✓ Cargando", window.PUNTOS_MANAGUA_01052026_1.features.length, "paradas...");
+        
+        // Crear una copia procesada de las paradas con campo 'name' para el buscador
+        paradasLista = window.PUNTOS_MANAGUA_01052026_1.features.map(feature => {
+            // Obtener nombre descriptivo
+            let nombreParada = feature.properties.DESCRIPCIO || 
+                              feature.properties.NOMBRE || 
+                              `Parada ${feature.properties.NUM_PARADA || '?'}`;
+            
+            // Asegurar que tenga coordenadas en formato [lat, lng]
+            let coords = [feature.geometry.coordinates[1], feature.geometry.coordinates[0]];
+            
+            return {
+                type: "Feature",
+                geometry: {
+                    type: "Point",
+                    coordinates: feature.geometry.coordinates
+                },
+                properties: {
+                    ...feature.properties,
+                    name: nombreParada,  // Campo requerido por leaflet-search
+                    NUM_PARADA: feature.properties.NUM_PARADA || '',
+                    DESCRIPCIO: nombreParada
+                }
+            };
+        });
+        
+        // Crear nuevo GeoJSON con nombres normalizados
+        var geoJsonNormalizado = {
+            type: "FeatureCollection",
+            features: paradasLista
+        };
+        
+        // Crear capa de paradas
+        capaParadas = L.geoJSON(geoJsonNormalizado, {
+            pointToLayer: function(feature, latlng) {
+                let numeroParada = feature.properties.NUM_PARADA || 
+                                  (feature.properties.name ? feature.properties.name.substring(0, 2) : 'P');
+                
+                return L.marker(latlng, {
+                    icon: L.divIcon({
+                        className: 'stop-label',
+                        html: `<div style="font-weight:bold;">${numeroParada}</div>`,
+                        iconSize: [30, 30],
+                        popupAnchor: [0, -15]
+                    })
+                }).bindPopup(`<b>${feature.properties.name}</b><br>N°: ${numeroParada}`);
+            }
+        }).addTo(map);
+        
+        console.log("✓ Capa de paradas cargada correctamente");
+        return true;
+    }
+
+    // ========== INICIALIZAR BUSCADOR LEAFLET-SEARCH ==========
+    function inicializarBuscador() {
+        if (!capaParadas) {
+            console.warn("Esperando capa de paradas...");
+            setTimeout(inicializarBuscador, 500);
+            return;
+        }
+        
+        // Remover buscador existente si hay
+        if (window.searchControl) {
+            map.removeControl(window.searchControl);
+        }
+        
+        // Crear nuevo buscador
+        window.searchControl = new L.Control.Search({
+            container: 'search-wrapper',
+            layer: capaParadas,
+            propertyName: 'name',  // Buscar por el campo 'name'
+            marker: false,
+            moveToLocation: function(latlng, title, map) {
+                // Callback cuando se selecciona una parada
+                if (miUbicacion) {
+                    triangular([latlng.lat, latlng.lng], title);
+                } else {
+                    alert("⚠️ Esperando ubicación GPS. Activa el GPS en tu dispositivo.");
+                }
+            },
+            collapsed: false,
+            textPlaceholder: '🔎 Buscar parada por nombre...',
+            textErr: 'No se encontró la parada',
+            buildTip: function(text, val) {
+                // Personalizar sugerencias
+                return '<div class="search-tip-item">📍 ' + text + '</div>';
+            }
+        });
+        
+        map.addControl(window.searchControl);
+        
+        // Estilizar el contenedor del buscador
+        setTimeout(() => {
+            let searchContainer = document.querySelector('.leaflet-control-search');
+            if (searchContainer) {
+                searchContainer.style.width = '100%';
+                let searchInput = searchContainer.querySelector('.search-input');
+                if (searchInput) {
+                    searchInput.placeholder = '🔎 Escribe nombre de parada...';
+                }
+            }
+        }, 100);
+        
+        console.log("✓ Buscador inicializado");
+    }
+
+    // ========== FUNCIÓN PRINCIPAL DE TRIANGULACIÓN ==========
+    function triangular(targetCoords, nombreParada) {
+        if(!miUbicacion) {
+            alert("🌍 Esperando ubicación GPS. Por favor espera...");
+            return false;
+        }
+        
+        // Remover línea anterior si existe
+        if(lineaDashed) map.removeLayer(lineaDashed);
+        
+        // Calcular distancia
+        let distancia = map.distance(miUbicacion, targetCoords);
+        
+        // Dibujar línea de triangulación
+        lineaDashed = L.polyline([miUbicacion, targetCoords], {
+            color: '#004e92', 
+            dashArray: '10, 12', 
+            weight: 4,
+            opacity: 0.8
+        }).addTo(map);
+        
+        // Ajustar vista para mostrar ambos puntos
+        map.fitBounds(lineaDashed.getBounds(), {padding: [80, 80]});
+        
+        // Mostrar información en panel manual
+        let rangoTexto = distancia <= 500 ? 
+            '<span class="success-text">✓ EN RANGO (500m)</span>' : 
+            '<span class="warning-text">✗ FUERA DE RANGO (>500m)</span>';
+        
+        document.getElementById('info-manual').innerHTML = `
+            <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
+                <div class="highlight" style="font-size: 1.1rem;">📍 ${nombreParada}</div>
+                <div style="margin-top: 8px;">📏 Distancia: <strong>${distancia.toFixed(0)} metros</strong></div>
+                <div style="margin-top: 5px;">${rangoTexto}</div>
+                ${distancia <= 500 ? '<div style="margin-top: 8px; color: #28a745;">✅ Parada dentro del radio de servicio</div>' : ''}
+            </div>
+        `;
+        
+        // Actualizar panel de buses cercanos según distancia
+        if(distancia <= 500) {
+            // Simulación de buses cercanos (puedes conectar con API real)
+            let busesInfo = generarBusesCercanos(distancia);
+            document.getElementById('lista-buses').innerHTML = `
+                <div style="background: #e8f5e9; padding: 12px; border-radius: 8px;">
+                    <div class="success-text">🚏 EN RANGO DE SERVICIO</div>
+                    <div style="margin-top: 10px;">
+                        ${busesInfo.map(bus => `
+                            <div style="margin: 5px 0; padding: 5px; border-left: 3px solid var(--celeste);">
+                                🚌 <strong>Bus ${bus.numero}</strong> - ${bus.tiempo}
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div style="margin-top: 8px; font-size: 12px; color: #666;">
+                        📍 Parada: a ${distancia.toFixed(0)} metros
+                    </div>
+                </div>
+            `;
+        } else {
+            document.getElementById('lista-buses').innerHTML = `
+                <div style="background: #ffebee; padding: 12px; border-radius: 8px;">
+                    <div class="warning-text">⛔ FUERA DE RANGO</div>
+                    <div style="margin-top: 8px;">
+                        No hay buses disponibles a más de 500 metros.
+                    </div>
+                    <div style="margin-top: 5px; font-size: 12px; color: #666;">
+                        📍 Distancia: ${distancia.toFixed(0)} metros
+                    </div>
+                </div>
+            `;
+        }
+        
+        return true;
+    }
+    
+    // Función simulada de buses cercanos (reemplazar con datos reales)
+    function generarBusesCercanos(distancia) {
+        // Simulación - Aquí puedes conectar con tu API de buses
+        let tiempoEstimado = Math.max(2, Math.floor(distancia / 100) * 2);
+        return [
+            { numero: "102", tiempo: `${tiempoEstimado} min`, ruta: "Ciudad Sandino" },
+            { numero: "110", tiempo: `${tiempoEstimado + 3} min`, ruta: "Mercado Oriental" }
+        ];
+    }
+    
+    // ========== BÚSQUEDA AUTOMÁTICA DE PARADA MÁS CERCANA ==========
+    function triangularAutomatico() {
+        if(!miUbicacion) {
+            alert("🌍 Esperando ubicación GPS. Activa el GPS en tu dispositivo.");
+            return;
+        }
+        
+        // Mostrar loading
+        document.getElementById('info-manual').innerHTML = '<div class="loading">🔍 Buscando parada más cercana...</div>';
+        
+        if(!paradasLista || paradasLista.length === 0) {
+            alert("⚠️ No hay datos de paradas disponibles");
+            return;
+        }
+        
+        let dMin = Infinity;
+        let closest = null;
+        let nombreClosest = "";
+        
+        paradasLista.forEach(parada => {
+            let coords = [parada.geometry.coordinates[1], parada.geometry.coordinates[0]];
+            let distancia = map.distance(miUbicacion, coords);
+            
+            if(distancia < dMin) {
+                dMin = distancia;
+                closest = coords;
+                nombreClosest = parada.properties.name;
+            }
+        });
+        
+        if(closest && dMin <= 500) {
+            triangular(closest, nombreClosest);
+            // Opcional: mostrar notificación
+            mostrarNotificacion(`✅ Parada más cercana: ${nombreClosest} (${dMin.toFixed(0)}m)`);
+        } else if(closest && dMin > 500) {
+            document.getElementById('info-manual').innerHTML = `
+                <div style="background: #fff3cd; padding: 12px; border-radius: 8px;">
+                    <div class="warning-text">⚠️ Sin paradas en radio de 500m</div>
+                    <div style="margin-top: 8px;">La parada más cercana está a <strong>${dMin.toFixed(0)} metros</strong></div>
+                    <div style="margin-top: 5px;">📍 ${nombreClosest || 'N/A'}</div>
+                </div>
+            `;
+            alert(`🚫 No hay paradas a menos de 500 metros.\nLa más cercana está a ${dMin.toFixed(0)} metros: ${nombreClosest}`);
+        } else {
+            alert("❌ No se encontraron paradas cercanas");
+        }
+    }
+    
+    // Notificación simple
+    function mostrarNotificacion(mensaje) {
+        // Crear notificación flotante
+        let notif = document.createElement('div');
+        notif.textContent = mensaje;
+        notif.style.cssText = `
+            position: fixed; bottom: 20px; right: 20px; background: #28a745; color: white;
+            padding: 12px 20px; border-radius: 8px; z-index: 10000; font-size: 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2); animation: fadeOut 3s forwards;
+        `;
+        document.body.appendChild(notif);
+        setTimeout(() => notif.remove(), 3000);
+    }
+    
+    // ========== AUTORIZACIÓN Y GPS ==========
     function autorizarAcceso() {
+        let telefono = document.getElementById('input-phone').value.trim();
+        if(telefono) {
+            console.log("Teléfono registrado:", telefono);
+            localStorage.setItem('userPhone', telefono);
+        }
+        
         document.getElementById('modal-registro').style.display = 'none';
         iniciarSeguimientoGPS();
     }
-
+    
     function iniciarSeguimientoGPS() {
-        navigator.geolocation.watchPosition(pos => {
-            miUbicacion = [pos.coords.latitude, pos.coords.longitude];
-            if(userMarker) map.removeLayer(userMarker);
-            userMarker = L.marker(miUbicacion, {icon: iconNorte}).addTo(map);
-            if(!map.centrado) { map.setView(miUbicacion, 16); map.centrado = true; }
-        }, null, {enableHighAccuracy: true});
-    }
-
-    // Inicializar paradas
-    capaParadas = L.geoJSON(PUNTOS_MANAGUA_01052026_1, {
-        pointToLayer: function(feature, latlng) {
-            return L.marker(latlng, {
-                icon: L.divIcon({
-                    className: 'stop-label',
-                    html: `<div>${feature.properties.NUM_PARADA || 'P'}</div>`
-                })
-            });
+        // Verificar soporte de geolocalización
+        if(!navigator.geolocation) {
+            alert("❌ Tu navegador no soporta geolocalización");
+            return;
         }
-    }).addTo(map);
-
-    // SOLUCIÓN AL BUSCADOR: Inicialización forzada
-    var controlBuscador = new L.Control.Search({
-        container: 'search-wrapper',
-        layer: capaParadas,
-        propertyName: 'name',
-        marker: false,
-        initial: false,
-        collapsed: false, // Forzar que esté siempre abierto para escribir
-        textPlaceholder: 'Escribe nombre de parada...',
-        moveToLocation: function(latlng, title) {
-            triangular([latlng.lat, latlng.lng], title);
+        
+        // Actualizar estado
+        document.getElementById('gps-status').innerHTML = '🔄 Activando GPS...';
+        
+        watchId = navigator.geolocation.watchPosition(
+            (pos) => {
+                miUbicacion = [pos.coords.latitude, pos.coords.longitude];
+                
+                // Actualizar o crear marcador
+                if(userMarker) map.removeLayer(userMarker);
+                userMarker = L.marker(miUbicacion, {
+                    icon: iconNorte
+                }).addTo(map)
+                .bindPopup('📍 Tu ubicación actual')
+                .openPopup();
+                
+                // Centrar solo la primera vez
+                if(!map.centrado) {
+                    map.setView(miUbicacion, 16);
+                    map.centrado = true;
+                    document.getElementById('gps-status').innerHTML = '✅ GPS activo';
+                }
+                
+                // Opcional: actualizar distancia automáticamente si hay una parada seleccionada
+                if(window.paradaSeleccionada) {
+                    triangular(window.paradaSeleccionada.coords, window.paradaSeleccionada.nombre);
+                }
+            },
+            (error) => {
+                console.error("Error GPS:", error);
+                let mensaje = "";
+                switch(error.code) {
+                    case 1: mensaje = "Permiso denegado. Activa la ubicación en tu dispositivo."; break;
+                    case 2: mensaje = "Ubicación no disponible. Verifica tu GPS."; break;
+                    case 3: mensaje = "Tiempo de espera agotado. Reintentando..."; break;
+                }
+                document.getElementById('gps-status').innerHTML = `⚠️ ${mensaje}`;
+                alert(`Error GPS: ${mensaje}`);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            }
+        );
+    }
+    
+    // ========== INICIALIZACIÓN PRINCIPAL ==========
+    document.addEventListener('DOMContentLoaded', () => {
+        // Cargar paradas
+        if(typeof PUNTOS_MANAGUA_01052026_1 !== 'undefined') {
+            let cargado = normalizarParadas();
+            if(cargado) {
+                inicializarBuscador();
+            }
+        } else {
+            console.error("No se encuentra PUNTOS_MANAGUA_01052026_1");
+            document.getElementById('info-manual').innerHTML = '<p style="color:red;">❌ Error: No se cargó el archivo de paradas. Verifica que PUNTOS_MANAGUA_01052026_1.js existe.</p>';
+        }
+        
+        // Mostrar modal si no hay sesión
+        if(localStorage.getItem('userPhone')) {
+            document.getElementById('modal-registro').style.display = 'none';
+            iniciarSeguimientoGPS();
         }
     });
-    map.addControl(controlBuscador);
-
-    function triangular(targetCoords, nombre) {
-        if(!miUbicacion) return alert("Esperando GPS...");
-        
-        if(lineaDashed) map.removeLayer(lineaDashed);
-
-        // Línea descontinua (Triangulación)
-        lineaDashed = L.polyline([miUbicacion, targetCoords], {
-            color: '#004e92', dashArray: '10, 15', weight: 3
-        }).addTo(map);
-
-        let distancia = map.distance(miUbicacion, targetCoords);
-        map.fitBounds(lineaDashed.getBounds(), {padding: [50, 50]});
-
-        // UI en tiempo real
-        document.getElementById('info-manual').innerHTML = `
-            <div class="highlight">📍 ${nombre}</div>
-            Distancia: ${distancia.toFixed(0)} metros
-        `;
-
-        // Lógica 500 metros
-        if(distancia <= 500) {
-            document.getElementById('lista-buses').innerHTML = `
-                <p class="highlight" style="color:green;">✓ EN RANGO (500m)</p>
-                <p>Bus 102: 4 min | Bus 110: 9 min</p>
-            `;
-        } else {
-            document.getElementById('lista-buses').innerHTML = `<p style="color:red;">Fuera de rango (>500m)</p>`;
+    
+    // Limpiar watch al cerrar página
+    window.addEventListener('beforeunload', () => {
+        if(watchId) navigator.geolocation.clearWatch(watchId);
+    });
+    
+    // Agregar estilos de animación
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeOut {
+            0% { opacity: 1; transform: translateY(0); }
+            70% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-20px); visibility: hidden; }
         }
-    }
-
-    function triangularAutomatico() {
-        if(!miUbicacion) return;
-        let dMin = Infinity;
-        let closest = null;
-
-        PUNTOS_MANAGUA_01052026_1.features.forEach(f => {
-            let coords = [f.geometry.coordinates[1], f.geometry.coordinates[0]];
-            let d = map.distance(miUbicacion, coords);
-            if(d < dMin) { dMin = d; closest = {coords, name: f.properties.name}; }
-        });
-
-        if(closest && dMin <= 500) {
-            triangular(closest.coords, closest.name);
-        } else {
-            alert("No hay paradas a menos de 500m.");
+        .leaflet-control-search .search-tip {
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
-    }
+    `;
+    document.head.appendChild(style);
 </script>
 
 </body>
