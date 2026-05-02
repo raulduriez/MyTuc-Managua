@@ -3,193 +3,172 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyBus - Sistema de Gestión de Paradas</title>
+    <title>MyBus - Localización en Tiempo Real</title>
 
-    <!-- Leaflet CSS -->
+    <!-- Leaflet y Plugins -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <!-- Leaflet Search CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet-search@3.0.2/dist/leaflet-search.min.css" />
     
     <style>
-        /* Estilo Original (Claro y Profesional) */
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #f4f7f6;
-            color: #333;
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-        }
+        /* Estilo MyBus - Fondo Claro y Profesional */
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', Arial; background: #f4f7f6; color: #333; }
+        #map { height: 100vh; width: 100%; z-index: 1; }
 
-        #map {
-            height: 100vh;
-            width: 100%;
-            z-index: 1;
-        }
-
-        /* Panel Lateral */
         .sidebar {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            z-index: 1000;
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
-            width: 320px;
-            border: 1px solid #ddd;
+            position: absolute; top: 10px; left: 10px; z-index: 1000;
+            background: white; padding: 15px; border-radius: 10px;
+            width: 340px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-height: 90vh; overflow-y: auto;
         }
 
-        /* Logo MyBus */
-        .logo-container {
-            text-align: center;
-            margin-bottom: 20px;
-        }
+        .logo-container { text-align: center; margin-bottom: 15px; }
+        .logo-container img { max-width: 150px; }
 
-        .logo-container img {
-            max-width: 180px;
-            height: auto;
-        }
+        .section { margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        label { display: block; font-weight: bold; font-size: 0.85rem; margin-bottom: 5px; color: #2c3e50; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 10px; }
 
-        h2 {
-            font-size: 1.1rem;
-            margin-bottom: 15px;
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 8px;
-            text-align: center;
+        /* Lista de Paradas Cercanas */
+        .stop-card {
+            background: #fff; border: 1px solid #e0e0e0; padding: 10px;
+            margin-top: 5px; border-radius: 6px; cursor: pointer; transition: 0.3s;
         }
+        .stop-card:hover { border-color: #3498db; background: #f0faff; }
+        .stop-card h4 { margin: 0 0 5px 0; font-size: 0.9rem; color: #3498db; }
+        .stop-card p { margin: 0; font-size: 0.8rem; color: #666; }
 
-        .filter-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            font-size: 0.9rem;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #555;
-        }
-
-        select, input {
-            width: 100%;
-            padding: 10px;
-            background: #fff;
-            border: 1px solid #ccc;
-            color: #333;
-            border-radius: 6px;
-            box-sizing: border-box;
-        }
-
-        /* Ajuste del buscador Leaflet para que combine */
-        .leaflet-control-search {
-            box-shadow: 0 1px 5px rgba(0,0,0,0.2) !important;
-            border-radius: 5px !important;
-        }
+        .btn-gps { background: #3498db; color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .status-msg { font-size: 0.85rem; color: #e74c3c; font-weight: bold; margin-top: 10px; text-align: center; }
     </style>
 </head>
 <body>
 
-    <div class="sidebar">
-        <!-- Contenedor del Logo -->
-        <div class="logo-container">
-            <!-- Reemplaza 'logo_mybus.png' con la ruta real de tu imagen -->
-            <img src="logo_mybus.png" alt="MyBus Logo">
-        </div>
+<div class="sidebar">
+    <div class="logo-container">
+        <img src="logo_mybus.png" alt="MyBus Logo">
+    </div>
 
-        <h2>Buscador de Paradas</h2>
-        
-        <!-- El buscador de Leaflet aparecerá aquí mediante JS o como control -->
-        <div class="filter-group">
-            <label>Filtrar por Punto de Control</label>
-            <select id="select-control">
-                <option value="all">Ver todas las paradas</option>
-                <option value="01">Punto de Control 01</option>
-                <option value="02">Punto de Control 02</option>
-            </select>
+    <!-- Registro Inicial -->
+    <div class="section">
+        <label>Número de Teléfono</label>
+        <input type="tel" id="user-phone" placeholder="Ej: 8888-8888">
+        <button class="btn-gps" onclick="getLocation()">Activar Mi Ubicación</button>
+    </div>
+
+    <!-- Buscador de Parada Específica -->
+    <div class="section">
+        <label>Consultar Parada Específica</label>
+        <div id="search-box"></div> <!-- El buscador de Leaflet se moverá aquí -->
+        <div id="query-result"></div>
+    </div>
+
+    <!-- Lista de 3 Paradas más cercanas -->
+    <div class="section">
+        <label>Paradas más cercanas (Radio 1km)</label>
+        <div id="nearby-stops-list">
+            <p style="font-size: 0.8rem; color: #999;">Usa el GPS para ver paradas...</p>
         </div>
     </div>
 
-    <div id="map"></div>
+    <div id="bus-status" class="status-msg"></div>
+</div>
 
-    <!-- Scripts -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-search@3.0.2/dist/leaflet-search.min.js"></script>
-    
-    <!-- Archivo de datos cargado previamente -->
-    <!-- <script src="PUNTOS_MANAGUA_01052026_1.js"></script> -->
+<div id="map"></div>
 
-    <script>
-        // Inicializar Mapa
-        var map = L.map('map').setView([12.1328, -86.2504], 13);
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-search@3.0.2/dist/leaflet-search.min.js"></script>
 
-        // Capa base estándar (OpenStreetMap) - Estilo anterior
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap'
-        }).addTo(map);
+<script>
+    var map = L.map('map').setView([12.1328, -86.2504], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        // Datos de ejemplo (usa tu variable PUNTOS_MANAGUA_01052026_1)
-        var paradasData = {
-            "type": "FeatureCollection",
-            "features": [
-                {
-                    "type": "Feature",
-                    "properties": { "name": "Parada Central", "NUM_PARADA": "P-001", "PTO_CONTRO": "01" },
-                    "geometry": { "type": "Point", "coordinates": [-86.2504, 12.1328] }
-                },
-                {
-                    "type": "Feature",
-                    "properties": { "name": "Plaza Inter", "NUM_PARADA": "P-002", "PTO_CONTRO": "02" },
-                    "geometry": { "type": "Point", "coordinates": [-86.2704, 12.1428] }
-                }
-            ]
-        };
+    var userMarker, busMarker;
+    var maxDistanceKm = 1; // Límite de 1 kilómetro solicitado
 
-        // Estilo de los puntos
-        var stopsLayer = L.geoJSON(paradasData, {
-            onEachFeature: function (feature, layer) {
-                layer.bindPopup("<b>" + feature.properties.name + "</b><br>ID: " + feature.properties.NUM_PARADA);
-            },
-            pointToLayer: function (feature, latlng) {
-                return L.circleMarker(latlng, {
-                    radius: 9,
-                    fillColor: "#3498db", // Azul estándar MyBus
-                    color: "#fff",
-                    weight: 2,
-                    opacity: 1,
-                    fillOpacity: 0.9
-                });
-            }
-        }).addTo(map);
+    // Cargar tus datos (Referencia a PUNTOS_MANAGUA_01052026_1)
+    // Aquí asumo que la variable ya está cargada en el entorno
+    var paradasGeoJSON = /* Tus datos de paradas de Managua */ []; 
 
-        // Configuración del buscador
-        var searchControl = new L.Control.Search({
-            layer: stopsLayer,
-            propertyName: 'name',
-            initial: false,
-            zoom: 16,
-            marker: false,
-            textPlaceholder: 'Buscar parada...'
-        });
+    // Función Haversine para distancia real
+    function getDistance(lat1, lon1, lat2, lon2) {
+        var R = 6371; 
+        var dLat = (lat2 - lat1) * Math.PI / 180;
+        var dLon = (lon2 - lon1) * Math.PI / 180;
+        var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
 
-        searchControl.on('search:locationfound', function(e) {
-            e.layer.openPopup();
-        });
+    function getLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(showPosition);
+        } else {
+            alert("El GPS no es compatible con este navegador.");
+        }
+    }
 
-        map.addControl(searchControl);
+    function showPosition(position) {
+        var lat = position.coords.latitude;
+        var lng = position.coords.longitude;
 
-        // Filtrado dinámico
-        document.getElementById('select-control').addEventListener('change', function(e) {
-            var val = e.target.value;
-            stopsLayer.eachLayer(function(layer) {
-                if (val === "all" || layer.feature.properties.PTO_CONTRO === val) {
-                    map.addLayer(layer);
-                } else {
-                    map.removeLayer(layer);
-                }
+        if (userMarker) map.removeLayer(userMarker);
+        userMarker = L.marker([lat, lng], {title: "Mi Ubicación"}).addTo(map)
+            .bindPopup("Estás aquí").openPopup();
+        
+        map.setView([lat, lng], 15);
+        findNearbyStops(lat, lng);
+        checkActiveBuses(lat, lng);
+    }
+
+    function findNearbyStops(userLat, userLng) {
+        var nearby = [];
+        // Lógica para filtrar paradas de tu GeoJSON a < 1km
+        // Ordenar por distancia y tomar las primeras 3
+        var listHtml = "";
+        
+        // Simulación de búsqueda en PUNTOS_MANAGUA_01052026_1
+        // nearby = paradasData.features.filter(f => getDistance(...) < 1);
+
+        if (nearby.length === 0) {
+            listHtml = "<p>No hay paradas a menos de 1km.</p>";
+        } else {
+            nearby.slice(0, 3).forEach(stop => {
+                listHtml += `<div class="stop-card">
+                    <h4>${stop.properties.name}</h4>
+                    <p>Distancia: 0.4 km | Tiempo: 5 min</p>
+                </div>`;
             });
-        });
-    </script>
+        }
+        document.getElementById('nearby-stops-list').innerHTML = listHtml;
+    }
+
+    function checkActiveBuses(lat, lng) {
+        // Si no hay buses activos en Firebase o tu DB a menos de 1km
+        var busesActivos = 0; // Cambiar con tu lógica de Firebase
+        if (busesActivos === 0) {
+            document.getElementById('bus-status').innerText = "NO HAY BUSES ACTIVOS CERCA DE TI.";
+        }
+    }
+
+    // Buscador vinculado a la lista completa de Managua
+    var searchControl = new L.Control.Search({
+        container: 'search-box',
+        layer: L.geoJSON(paradasData), // Tu variable de todas las paradas
+        propertyName: 'name',
+        moveToLocation: function(latlng) {
+            var dist = getDistance(userMarker.getLatLng().lat, userMarker.getLatLng().lng, latlng.lat, latlng.lng);
+            document.getElementById('query-result').innerHTML = `
+                <div class="stop-card" style="border-left: 5px solid #2ecc71;">
+                    <h4>Info de Parada</h4>
+                    <p>Distancia desde tu punto: ${dist.toFixed(2)} km</p>
+                    <p>Estado: ${dist > 1 ? 'Fuera de rango (1km)' : 'En rango'}</p>
+                </div>`;
+            map.setView(latlng, 16);
+        }
+    });
+    map.addControl(searchControl);
+
+</script>
 </body>
 </html>
