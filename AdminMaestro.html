@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MyTuc Managua | Admin Master PRO</title>
     
+    <!-- Librerías Externas -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -13,62 +14,179 @@
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 
     <style>
-        :root { --bg-dark: #001f3f; --glass: rgba(255, 255, 255, 0.1); --primary: #1a73e8; --success: #1e8e3e; --danger: #d93025; --warning: #f39c12; }
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; background: radial-gradient(circle at center, #003366 0%, #001122 100%); color: white; overflow: hidden; }
-        #access-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #001122; display: flex; align-items: center; justify-content: center; z-index: 10000; }
-        .access-card { background: var(--glass); padding: 40px; border-radius: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); text-align: center; width: 350px; }
-        #main-portal { display: flex; flex-direction: column; height: 100vh; align-items: center; justify-content: center; }
+        :root {
+            --bg-dark: #001f3f;
+            --glass: rgba(255, 255, 255, 0.1);
+            --primary: #1a73e8;
+            --success: #1e8e3e;
+            --danger: #d93025;
+            --warning: #f39c12;
+        }
+
+        body, html {
+            margin: 0; padding: 0; height: 100%;
+            font-family: 'Segoe UI', sans-serif;
+            background: radial-gradient(circle at center, #003366 0%, #001122 100%);
+            color: white; overflow: hidden;
+        }
+
+        /* --- ACCESO --- */
+        #access-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #001122; display: flex; align-items: center; justify-content: center;
+            z-index: 10000;
+        }
+        .access-card {
+            background: var(--glass); padding: 40px; border-radius: 20px;
+            backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);
+            text-align: center; width: 350px;
+        }
+
+        /* --- PORTAL PRINCIPAL --- */
+        #main-portal {
+            display: flex; flex-direction: column; height: 100vh;
+            align-items: center; justify-content: center;
+        }
         .portal-header { position: absolute; top: 40px; left: 60px; font-size: 42px; font-weight: bold; }
         .portal-container { display: flex; align-items: center; gap: 80px; width: 90%; max-width: 1200px; }
-        .logo-box { background: linear-gradient(145deg, rgba(26,115,232,0.4), rgba(0,0,0,0.2)); padding: 60px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 20px 50px rgba(0,0,0,0.5); text-align: center; flex: 1; }
+        .logo-box {
+            background: linear-gradient(145deg, rgba(26,115,232,0.4), rgba(0,0,0,0.2));
+            padding: 60px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5); text-align: center; flex: 1;
+        }
         .logo-box img { width: 220px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 0 20px var(--primary); }
         .menu-options { display: flex; flex-direction: column; gap: 20px; flex: 1; }
-        .menu-btn { background: var(--glass); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; padding: 25px; display: flex; align-items: center; gap: 20px; cursor: pointer; transition: 0.3s; text-align: left; color: white; text-decoration: none; }
+        .menu-btn {
+            background: var(--glass); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px; padding: 25px; display: flex; align-items: center;
+            gap: 20px; cursor: pointer; transition: 0.3s; text-align: left; color: white;
+            text-decoration: none;
+        }
         .menu-btn:hover { background: rgba(255,255,255,0.2); transform: translateX(10px); border-color: var(--primary); }
         .menu-btn i { font-size: 34px; color: var(--primary); }
-        .view-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #001122; z-index: 500; display: none; grid-template-columns: 380px 1fr; }
-        .close-view { position: absolute; top: 20px; right: 20px; z-index: 1000; background: var(--danger); color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+
+        /* --- VISTAS --- */
+        .view-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #001122; z-index: 500; display: none;
+            grid-template-columns: 380px 1fr;
+        }
+        .close-view {
+            position: absolute; top: 20px; right: 20px; z-index: 1000;
+            background: var(--danger); color: white; border: none; padding: 10px 20px;
+            border-radius: 10px; cursor: pointer; font-weight: bold;
+        }
         .sidebar { background: #fff; color: #333; padding: 20px; overflow-y: auto; }
         .card { background: #f8f9fa; border: 1px solid #ddd; border-radius: 12px; padding: 15px; margin-bottom: 15px; color: #333; }
         #map { height: 100%; width: 100%; }
         .scroll-list { max-height: 400px; overflow-y: auto; font-size: 12px; }
         .list-item { padding: 12px; border-bottom: 1px solid #eee; transition: 0.3s; }
-        .tag { padding: 4px 8px; border-radius: 6px; font-size: 9px; color: white; font-weight: bold; cursor: pointer; display: inline-block; border: none; }
+        .tag { padding: 4px 8px; border-radius: 6px; font-size: 9px; color: white; font-weight: bold; cursor: pointer; display: inline-block; }
         .qr-thumb { height: 45px; width: 45px; border-radius: 5px; cursor: pointer; }
         .btn-action { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; color: white; }
     </style>
 </head>
 <body>
-    <div id="access-overlay"><div class="access-card"><h2>Panel Maestro</h2><input type="password" id="access-code" placeholder="CÓDIGO" style="width:100%; padding:12px; margin:20px 0; border-radius:8px; border:none; text-align:center;"><button class="btn-action" style="background:var(--primary)" onclick="checkAccess()">INGRESAR</button></div></div>
 
+    <!-- BLOQUEO DE ACCESO -->
+    <div id="access-overlay">
+        <div class="access-card">
+            <img src="img/Logo.jpeg" style="width: 100px; border-radius: 10px; margin-bottom: 20px;">
+            <h2>Panel Maestro</h2>
+            <input type="password" id="access-code" placeholder="CÓDIGO" style="width:100%; padding:12px; margin:20px 0; border-radius:8px; border:none; text-align:center;">
+            <button class="btn-action" style="background:var(--primary)" onclick="checkAccess()">INGRESAR</button>
+        </div>
+    </div>
+
+    <!-- PORTAL PRINCIPAL -->
     <div id="main-portal">
         <div class="portal-header">My-Tuc Managua</div>
         <div class="portal-container">
-            <div class="logo-box"><h2>MANADA DIGITAL</h2></div>
+            <div class="logo-box">
+                <img src="img/Logo.jpeg" alt="Logo">
+                <h2>MANADA DIGITAL</h2>
+            </div>
             <div class="menu-options">
-                <div class="menu-btn" onclick="openView('view-stats')"><i class="fas fa-chart-line"></i><div><h3>Centro de Control</h3><p>Radar y unidades en vivo</p></div></div>
-                <div class="menu-btn" onclick="openView('view-registros')"><i class="fas fa-file-signature"></i><div><h3>Gestión de Registros</h3><p>Cooperativas y QR</p></div></div>
+                <div class="menu-btn" onclick="openView('view-stats')">
+                    <i class="fas fa-chart-line"></i>
+                    <div>
+                        <h3>Centro de Control y Mapa</h3>
+                        <p>Radar en vivo, detalle de unidades y alertas</p>
+                    </div>
+                </div>
+                <div class="menu-btn" onclick="openView('view-registros')">
+                    <i class="fas fa-file-signature"></i>
+                    <div>
+                        <h3>Gestión de Registros</h3>
+                        <p>Cooperativas, QR y Cierre de Día (Excel)</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- VISTA: CENTRO DE CONTROL -->
     <div id="view-stats" class="view-layer">
         <button class="close-view" onclick="closeView('view-stats')">SALIR X</button>
         <aside class="sidebar">
-            <div class="card"><h3>Pasajeros</h3><b id="countUsers" style="font-size:32px; color:var(--warning);">0</b></div>
-            <div class="card"><h3>Flota Activa</h3><b id="countBuses" style="font-size:32px; color:var(--primary);">0</b></div>
-            <div class="card"><h3>Unidades</h3><div id="detalleActivos" class="scroll-list"></div></div>
+            <h2 style="color:var(--primary)">Centro de Control</h2>
+            
+            <div class="card">
+                <h3>Pasajeros Conectados</h3>
+                <div style="text-align:center; padding:10px;">
+                    <b id="countUsers" style="font-size:32px; color:var(--warning);">0</b><br>
+                    <small>USUARIOS EN RADAR</small>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Estado de la Flota</h3>
+                <div style="text-align:center; padding:10px;">
+                    <b id="countBuses" style="font-size:32px; color:var(--primary);">0</b><br>
+                    <small style="color:var(--success);">UNIDADES ACTIVAS</small>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>Unidades en Movimiento</h3>
+                <div id="detalleActivos" class="scroll-list" style="max-height: 250px; background: #f0f4f8; border-radius: 8px;"></div>
+            </div>
+
+            <div class="card">
+                <h3>Reportes de Usuarios</h3>
+                <div id="listAlertas" class="scroll-list" style="max-height: 150px;"></div>
+                <button class="btn-action" style="background:#eee; color:#333" onclick="limpiarChat()">Limpiar Chat</button>
+            </div>
         </aside>
         <div id="map"></div>
     </div>
 
+    <!-- VISTA: REGISTROS Y CIERRE -->
     <div id="view-registros" class="view-layer" style="grid-template-columns: 1fr;">
-        <button class="close-view" onclick="closeView('view-registros')">VOLVER</button>
+        <button class="close-view" onclick="closeView('view-registros')">VOLVER AL MENÚ</button>
         <div style="background: white; color: #333; padding: 50px; overflow-y: auto;">
-            <button onclick="descargarReporteExcel()" class="btn-action" style="background:#333; width: auto; padding: 10px 25px;">Exportar Excel</button>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top:20px;">
-                <div class="card"><h3>Cooperativas</h3><div id="listEmpresas" class="scroll-list"></div><button class="btn-action" style="background:var(--primary)" onclick="nuevaEmpresa()">+ Nueva</button></div>
-                <div class="card"><h3>Monitoreo Unidades</h3><div id="listConductores" class="scroll-list"></div><button class="btn-action" style="background:var(--success)" onclick="registrarConductorAdmin()">+ Generar QR</button></div>
+            <h1>Gestión de Operaciones</h1>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button onclick="descargarReporteExcel()" class="btn-action" style="background:#333; width: auto; padding: 10px 25px;">
+                    <i class="fas fa-file-excel"></i> Descargar Reporte y Cerrar Día
+                </button>
+                <button onclick="limpiarSistemaDiario()" class="btn-action" style="background:var(--danger); width: auto; padding: 10px 25px;">
+                    <i class="fas fa-trash-alt"></i> Limpiar Radar Manualmente
+                </button>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                <div class="card">
+                    <h3>Cooperativas</h3>
+                    <div id="listEmpresas" class="scroll-list"></div>
+                    <button class="btn-action" style="background:var(--primary)" onclick="nuevaEmpresa()">+ Nueva Cooperativa</button>
+                </div>
+                <div class="card">
+                    <h3>Monitoreo GPS de Unidades</h3>
+                    <div id="listConductores" class="scroll-list"></div>
+                    <button class="btn-action" style="background:var(--success)" onclick="registrarConductorAdmin()">+ Generar QR Unidad</button>
+                </div>
             </div>
         </div>
     </div>
@@ -78,205 +196,170 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        function checkAccess() { const code = document.getElementById('access-code').value; if (code === "7070" || code === "2026") document.getElementById('access-overlay').style.display = "none"; else alert("Error"); }
-        function openView(id) { document.getElementById(id).style.display = "grid"; if(id === 'view-stats') setTimeout(() => map.invalidateSize(), 400); }
+        function checkAccess() {
+            const code = document.getElementById('access-code').value;
+            if (code === "7070" || code === "2026") document.getElementById('access-overlay').style.display = "none";
+            else alert("Acceso denegado");
+        }
+
+        function openView(id) { 
+            document.getElementById(id).style.display = "grid"; 
+            if(id === 'view-stats') setTimeout(() => map.invalidateSize(), 400); 
+        }
         function closeView(id) { document.getElementById(id).style.display = "none"; }
 
         const map = L.map('map', { zoomControl: false }).setView([12.1328, -86.2504], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        const busIcon = L.divIcon({ html: '<i class="fas fa-bus" style="color:#1a73e8; font-size:22px; text-shadow: 0 0 3px white;"></i>', className: 'b-icon', iconSize: [22, 22] });
         let markersBuses = {};
 
-        db.ref('control_master/usuarios_activos').on('value', snap => { document.getElementById('countUsers').innerText = snap.numChildren(); });
+        // 1. Contador de Usuarios Pasajeros Conectados
+        db.ref('control_master/usuarios_activos').on('value', snap => {
+            document.getElementById('countUsers').innerText = snap.numChildren();
+        });
 
+        // 2. Sincronización de Flota y Semáforo GPS[cite: 1, 5]
         db.ref('buses').on('value', snap => {
             let activos = 0;
             const detalleBox = document.getElementById('detalleActivos');
             const busesLive = snap.val() || {};
-            detalleBox.innerHTML = "";
+            detalleBox.innerHTML = ""; 
+
+            // Limpieza de marcadores inactivos
+            for (let id in markersBuses) {
+                if (!busesLive[id]) {
+                    map.removeLayer(markersBuses[id]);
+                    delete markersBuses[id];
+                }
+            }
+
             snap.forEach(child => {
-                const b = child.val(); activos++;
-                const min = (Date.now() - b.timestamp) / 60000;
-                let color = min > 5 ? "red" : (min > 2 ? "orange" : "green");
-                detalleBox.innerHTML += `<div style="border-left: 5px solid ${color}; padding:5px; margin-bottom:5px;"><b>Unidad ${child.key}</b></div>`;
+                const b = child.val();
+                activos++;
+                
+                // Cálculo de estado de conexión GPS[cite: 1, 5]
+                const tiempoMsg = b.timestamp || b.ultima_actualizacion;
+                const min = (Date.now() - tiempoMsg) / 60000;
+                let colorStatus = "--success"; // Verde
+                if(min > 2) colorStatus = "--warning"; // Naranja
+                if(min > 5) colorStatus = "--danger"; // Rojo
+
+                detalleBox.innerHTML += `
+                    <div style="padding: 10px; border-bottom: 1px solid #d1d9e6; border-left: 5px solid var(${colorStatus})">
+                        <b style="color:var(--primary)">Unidad: ${child.key}</b><br>
+                        <small><i class="fas fa-signal"></i> ${min < 1 ? 'En línea' : 'Hace ' + Math.floor(min) + ' min'}</small>
+                    </div>`;
+
                 if(markersBuses[child.key]) markersBuses[child.key].setLatLng([b.lat, b.lng]);
-                else markersBuses[child.key] = L.marker([b.lat, b.lng]).addTo(map);
+                else markersBuses[child.key] = L.marker([b.lat, b.lng], {icon: busIcon}).addTo(map).bindPopup(`Unidad: ${child.key}`);
             });
             document.getElementById('countBuses').innerText = activos;
             actualizarListaMonitoreo(busesLive);
         });
 
+        // 3. Monitor de Unidades Autorizadas con Alertas GPS[cite: 1, 5]
         function actualizarListaMonitoreo(busesLive) {
             db.ref('conductores_autorizados').once('value', snap => {
-                const list = document.getElementById('listConductores'); list.innerHTML = "";
+                const list = document.getElementById('listConductores');
+                list.innerHTML = "";
                 snap.forEach(child => {
-                    const c = child.val();
-                    list.innerHTML += `<div class="list-item"><b>${c.unidad}</b> <img src="${c.qr}" class="qr-thumb" onclick="window.open('${c.qr}')"></div>`;
+                    const c = child.val(), id = child.key;
+                    const live = busesLive[c.unidad];
+                    const isOnline = live !== undefined;
+                    
+                    let bgStatus = "#888";
+                    let statusTxt = "DESCONECTADO";
+                    let alertStyle = "";
+
+                    if (isOnline) {
+                        const tiempo = live.timestamp || live.ultima_actualizacion;
+                        const min = (Date.now() - tiempo) / 60000;
+                        if (min <= 2) { bgStatus = "var(--success)"; statusTxt = "GPS ACTIVO"; }
+                        else if (min <= 5) { bgStatus = "var(--warning)"; statusTxt = "SEÑAL DÉBIL"; alertStyle = "border: 2px solid var(--warning)"; }
+                        else { bgStatus = "var(--danger)"; statusTxt = "GPS PERDIDO"; alertStyle = "border: 2px solid var(--danger)"; }
+                    }
+
+                    list.innerHTML += `
+                        <div class="list-item" style="${alertStyle}; margin-bottom:10px; border-radius:10px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <b>Unidad ${c.unidad}</b> <span class="tag" style="background:${bgStatus}">${statusTxt}</span><br>
+                                    <small>${c.empresa_nombre}</small>
+                                </div>
+                                <img src="${c.qr}" class="qr-thumb" onclick="window.open('${c.qr}')">
+                            </div>
+                            <div style="margin-top:8px;">
+                                <button class="tag" style="background:var(--primary); border:none;" onclick="db.ref('conductores_autorizados/${id}').update({estado:'validada'})">Validar</button>
+                                <button class="tag" style="background:var(--danger); border:none;" onclick="if(confirm('¿Borrar?')) db.ref('conductores_autorizados/${id}').remove()">Borrar</button>
+                            </div>
+                        </div>`;
                 });
             });
         }
 
-        // SOLUCIÓN QR 404[cite: 3]
-        function registrarConductorAdmin() {
-            const unidad = prompt("Unidad:"), empresa = prompt("Cooperativa:");
-            if(!unidad || !empresa) return;
-            const id = "BUS-" + Math.floor(1000 + Math.random()*9000);
-            const urlActual = window.location.href;
-            const rutaBase = urlActual.substring(0, urlActual.lastIndexOf('/'));
-            const urlFinal = `${rutaBase}/conductor_2.html?id=${id}`; // Apuntando a conductor_2.html[cite: 3]
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(urlFinal)}`;
-            db.ref('conductores_autorizados/' + id).set({ unidad, empresa_nombre: empresa, qr: qrUrl });
-            window.open(qrUrl, '_blank');
-        }
-
-        function descargarReporteExcel() { /* Lógica XLSX */ alert("Generando..."); }
-        function nuevaEmpresa() { const n = prompt("Nombre:"); if(n) db.ref('empresas/' + Date.now()).set({ nombre: n }); }
-    </script>
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyTuc | Panel Conductor</title>
-    
-    <!-- Librerías Externas -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-
-    <style>
-        :root {
-            --bg-dark: #070b12;
-            --accent: #ff3d00;
-            --azul-deep: #004e92;
-        }
-
-        body {
-            margin: 0;
-            min-height: 100vh;
-            background: radial-gradient(circle at center, var(--azul-deep), var(--bg-dark)) !important;
-            font-family: 'Segoe UI', sans-serif;
-            color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-        }
-
-        #portalConductor {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            cursor: pointer;
-        }
-
-        #panelTransmision {
-            display: none;
-            width: 90%;
-            max-width: 400px;
-            background: rgba(10, 14, 20, 0.95);
-            border-radius: 30px;
-            padding: 30px;
-            border: 1px solid var(--accent);
-            text-align: center;
-        }
-
-        .btn-transmitir {
-            background: var(--accent);
-            color: white;
-            font-weight: bold;
-            border: none;
-            border-radius: 15px;
-            padding: 15px;
-            width: 100%;
-            margin-top: 20px;
-        }
-
-        .active-pulse {
-            animation: pulse 1.5s infinite;
-            background: #2ecc71 !important;
-        }
-
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0px rgba(46, 204, 113, 0.7); }
-            100% { box-shadow: 0 0 0 15px rgba(46, 204, 113, 0); }
-        }
-    </style>
-</head>
-<body>
-
-    <div id="portalConductor" onclick="abrirPortal()">
-        <img src="img/Logo.jpeg" style="width:180px; border-radius:50%; border:3px solid var(--accent);" alt="Logo">
-        <h2 class="mt-4 fw-bold">PANEL CONDUCTOR</h2>
-        <p class="opacity-50">Toca para identificarte</p>
-    </div>
-
-    <div id="panelTransmision">
-        <h3>Transmisión en Vivo</h3>
-        <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 20px; margin-top: 20px; border-left: 5px solid var(--accent);">
-            <p class="mb-1 small opacity-50 text-start">ESTADO:</p>
-            <div id="statusText" class="fw-bold text-warning text-start">GPS Inactivo</div>
-            <hr class="my-2 opacity-10">
-            <p class="mb-1 small opacity-50 text-start">COORDENADAS:</p>
-            <div id="coordsText" class="small text-start">0.0000, 0.0000</div>
-        </div>
-        <input type="hidden" id="busId">
-        <button id="btnGps" class="btn-transmitir" onclick="toggleTransmision()">
-            <i class="fas fa-satellite-dish"></i> INICIAR RUTA
-        </button>
-        <button class="btn btn-link text-white-50 mt-3" onclick="location.reload()">Cerrar Sesión</button>
-    </div>
-
-    <script>
-        const firebaseConfig = { apiKey: "AIzaSyDGBkCnWppaprzs2gUkTj16nk6WOiLn5yQ", databaseURL: "https://bus-tracker-managua-default-rtdb.firebaseio.com" };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-
-        // CAPTURA EL ID AUTOMÁTICAMENTE[cite: 3, 4]
-        const params = new URLSearchParams(window.location.search);
-        const idQR = params.get('id');
-        if(idQR) { document.getElementById('busId').value = idQR; }
-
-        function abrirPortal() { 
-            if(!idQR) { alert("Acceso denegado: Use el QR oficial."); return; }
-            document.getElementById('portalConductor').style.display = 'none';
-            document.getElementById('panelTransmision').style.display = 'block';
-        }
-
-        let watchId = null, activo = false;
-
-        function toggleTransmision() {
-            const id = document.getElementById('busId').value;
-            const btn = document.getElementById('btnGps');
-            const status = document.getElementById('statusText');
-
-            if (!activo) {
-                activo = true;
-                btn.classList.add('active-pulse');
-                btn.innerHTML = '<i class="fas fa-stop-circle"></i> DETENER RUTA';
-                status.innerText = "TRANSMITIENDO...";
-                status.className = "fw-bold text-success text-start";
-
-                watchId = navigator.geolocation.watchPosition(pos => {
-                    const lat = pos.coords.latitude;
-                    const lng = pos.coords.longitude;
-                    document.getElementById('coordsText').innerText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-                    
-                    db.ref(`buses/${id}`).set({ lat, lng, timestamp: Date.now(), unidad: id });
-                }, err => { alert("Error: Active el GPS y use HTTPS."); }, { enableHighAccuracy: true });
-            } else {
-                activo = false;
-                btn.classList.remove('active-pulse');
-                btn.innerHTML = '<i class="fas fa-satellite-dish"></i> INICIAR RUTA';
-                status.innerText = "GPS Inactivo";
-                status.className = "fw-bold text-warning text-start";
-                navigator.geolocation.clearWatch(watchId);
-                db.ref(`buses/${id}`).remove();
+        // Operaciones de Limpieza y Reporte[cite: 1, 5]
+        function limpiarSistemaDiario() {
+            if(confirm("¿Reiniciar radar?")) {
+                db.ref('buses').set(null).then(() => { alert("Radar reiniciado."); location.reload(); });
             }
         }
+
+        function descargarReporteExcel() {
+            db.ref('buses').once('value', snap => {
+                const data = [];
+                snap.forEach(child => {
+                    const b = child.val();
+                    data.push({ Unidad: child.key, Estado: "Finalizado", Actualizado: new Date(b.timestamp || Date.now()).toLocaleString() });
+                });
+                if (data.length === 0) return alert("No hay datos.");
+                const ws = XLSX.utils.json_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Reporte");
+                XLSX.writeFile(wb, `Reporte_MyTuc_${new Date().toLocaleDateString()}.xlsx`);
+                setTimeout(limpiarSistemaDiario, 2000);
+            });
+        }
+
+        function nuevaEmpresa() {
+            const nom = prompt("Nombre Cooperativa:");
+            if(nom) db.ref('empresas/' + Date.now()).set({ nombre: nom });
+        }
+
+        db.ref('empresas').on('value', snap => {
+            const list = document.getElementById('listEmpresas');
+            list.innerHTML = "";
+            snap.forEach(child => {
+                list.innerHTML += `<div class="list-item"><b>${child.val().nombre}</b> <button onclick="db.ref('empresas/${child.key}').remove()" class="tag" style="background:red; border:none; float:right;">X</button></div>`;
+            });
+        });
+
+        // --- CORRECCIÓN QR PARA GITHUB PAGES ---[cite: 3, 5]
+        function registrarConductorAdmin() {
+            const unidad = prompt("Número de Unidad:");
+            const empresa = prompt("Nombre de Cooperativa:");
+            if(!unidad || !empresa) return;
+            
+            const idUnidad = "BUS-" + Math.floor(1000 + Math.random() * 9000);
+            
+            // Detecta automáticamente la ruta del repositorio en GitHub Pages[cite: 3]
+            const urlActual = window.location.href;
+            const rutaBase = urlActual.substring(0, urlActual.lastIndexOf('/'));
+            const urlFinalConductor = `${rutaBase}/conductor.html?id=${idUnidad}`;
+
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(urlFinalConductor)}`;
+            
+            db.ref('conductores_autorizados/' + idUnidad).set({ 
+                unidad: unidad, 
+                empresa_nombre: empresa, 
+                qr: qrUrl,
+                estado: 'validada'
+            }).then(() => {
+                alert("¡Unidad Registrada! Se abrirá el código QR.");
+                window.open(qrUrl, '_blank');
+            });
+        }
+
+        function limpiarChat() { db.ref('chat_comunidad').set(null); }
     </script>
 </body>
 </html>
