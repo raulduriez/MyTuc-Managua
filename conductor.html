@@ -2,289 +2,102 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Panel Conductor | MyTuc Managua</title>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Conductor | MyTuc</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body { 
-            font-family: 'Segoe UI', sans-serif; 
-            background: #0b0e14; 
-            color: #c9d1d9; 
-            padding: 16px; 
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow-x: hidden;
-        }
-
-        /* CAPA 1: El Mosaico de Logos */
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-image: url('img/Logo.jpeg'); 
-            background-size: 70px;
-            background-repeat: repeat;
-            opacity: 0.12; /* Un poco más claro para que se note el logo */
-            z-index: -2;
-        }
-
-        /* CAPA 2: El Efecto "Faro" (Barrido de luz) */
-        body::after {
-            content: "";
-            position: fixed;
-            top: 0; left: -150%; width: 300%; height: 100%;
-            background: linear-gradient(
-                120deg, 
-                transparent 0%, 
-                rgba(26, 115, 232, 0) 30%, 
-                rgba(26, 115, 232, 0.15) 50%, 
-                rgba(26, 115, 232, 0) 70%, 
-                transparent 100%
-            );
-            z-index: -1;
-            animation: faro 8s infinite linear;
-            pointer-events: none;
-        }
-
-        @keyframes faro {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(100%); }
-        }
-
-        .container { width: 100%; max-width: 500px; position: relative; z-index: 1; }
-        
-        .header {
-            background: linear-gradient(135deg, #1a73e8, #002347);
-            color: white;
-            padding: 25px;
-            text-align: center;
-            border-radius: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .header img { 
-            height: 65px; 
-            margin-bottom: 10px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-
-        .driver-form { 
-            background: rgba(22, 27, 34, 0.85); 
-            padding: 24px; 
-            border-radius: 20px; 
-            border: 1px solid rgba(48, 54, 61, 0.8);
-            backdrop-filter: blur(12px); /* Efecto cristal */
-        }
-
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-size: 0.85rem; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; }
-        
-        input {
-            width: 100%;
-            padding: 14px;
-            background: rgba(11, 14, 20, 0.8);
-            border: 1px solid #30363d;
-            border-radius: 10px;
-            color: white;
-            font-size: 1rem;
-            outline: none;
-            transition: 0.3s;
-        }
-
-        input:focus { border-color: #1a73e8; box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.2); }
-
-        .btn {
-            width: 100%;
-            padding: 16px;
-            border: none;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.3s;
-            text-transform: uppercase;
-        }
+        body { font-family: 'Segoe UI', sans-serif; background: #0b0e14; color: white; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+        body::before { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: url('img/Logo.jpeg'); background-size: 60px; opacity: 0.1; z-index: -1; }
+        .container { width: 90%; max-width: 400px; background: rgba(22, 27, 34, 0.9); padding: 30px; border-radius: 20px; border: 1px solid #30363d; text-align: center; backdrop-filter: blur(10px); }
+        input { width: 100%; padding: 15px; margin-bottom: 15px; background: #000; border: 1px solid #333; border-radius: 12px; color: #fff; font-size: 16px; outline: none; }
+        .btn { width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
         .btn-start { background: #1a73e8; color: white; box-shadow: 0 4px 15px rgba(26, 115, 232, 0.4); }
-        .btn-start:active { transform: scale(0.98); }
         .btn-stop { background: #d93025; color: white; display: none; }
-        
-        .status {
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 20px;
-            text-align: center;
-            font-weight: bold;
-            display: none;
-            font-size: 0.9rem;
-        }
-        .active { background: rgba(0, 255, 136, 0.1); color: #00ff88; border: 1px solid #00ff88; }
-        .inactive { background: rgba(255, 68, 68, 0.1); color: #ff4444; border: 1px solid #ff4444; }
-
-        .info-box {
-            margin-top: 20px;
-            font-size: 0.8rem;
-            color: #8b949e;
-            text-align: center;
-            background: rgba(0,0,0,0.2);
-            padding: 10px;
-            border-radius: 20px;
-        }
-
-        #extraInfo { display: none; margin-top: 20px; border-top: 1px solid #333; padding-top: 20px; }
+        #extraInfo { display: none; margin-top: 20px; text-align: left; }
+        .status-badge { background: #1a73e8; padding: 10px; border-radius: 10px; margin-bottom: 20px; font-weight: bold; display: inline-block; width: 100%; text-align: center; }
     </style>
 </head>
 <body>
-
 <div class="container">
-    <div class="header">
-        <img src="img/Logo.jpeg" alt="MyTuc Logo">
-        <h1>MyTuc Managua</h1>
-        <p>Transmisión en Tiempo Real</p>
+    <img src="img/Logo.jpeg" style="height:60px; border-radius:10px; margin-bottom:15px;">
+    <h2>Panel Conductor</h2>
+    
+    <div id="step1">
+        <input type="text" id="unidadCodigo" placeholder="Esperando QR o ingrese código...">
+        <button class="btn btn-start" onclick="validarCodigo()">VERIFICAR UNIDAD</button>
     </div>
 
-    <div class="driver-form">
-        <div id="step1">
-            <div class="form-group">
-                <label>Código de Unidad</label>
-                <input type="text" id="unidadCodigo" placeholder="Ej: EMP-8902-01222">
-            </div>
-            <button id="verifyBtn" class="btn btn-start" onclick="validarCodigo()">VERIFICAR CÓDIGO</button>
-        </div>
-
-        <div id="extraInfo">
-            <div style="background: #0b0e14; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #1a73e8;">
-                <small style="color: #1a73e8;">UNIDAD AUTORIZADA</small>
-                <p id="labelUnidad" style="font-weight: bold; font-size: 1.3rem; margin: 5px 0;"></p>
-                <small id="labelEmpresa" style="color: #8b949e;"></small>
-            </div>
-
-            <div class="form-group">
-                <label>Teléfono</label>
-                <input type="tel" id="telConductor" placeholder="88888888">
-            </div>
-
-            <div class="form-group">
-                <label>Ruta Actual</label>
-                <input type="text" id="rutaNombre" placeholder="Ej: Ruta 114">
-            </div>
-
-            <button id="startBtn" class="btn btn-start" onclick="iniciarGPS()">INICIAR RUTA Y GPS</button>
-        </div>
-
-        <button id="stopBtn" class="btn btn-stop" onclick="detenerGPS()">DETENER TRANSMISIÓN</button>
-        
-        <div id="statusBox" class="status"></div>
+    <div id="extraInfo">
+        <div class="status-badge" id="labelUnidad">UNIDAD NO DETECTADA</div>
+        <label style="font-size: 12px; color: #8b949e;">TELÉFONO:</label>
+        <input type="tel" id="telConductor" placeholder="Ej: 88888888">
+        <label style="font-size: 12px; color: #8b949e;">RUTA:</label>
+        <input type="text" id="rutaNombre" placeholder="Ej: Ruta 110">
+        <button class="btn btn-start" onclick="iniciarGPS()">ACTIVAR RASTREO EN VIVO</button>
     </div>
 
-    <div class="info-box" id="geoInfo">
-        Esperando verificación de identidad...
-    </div>
+    <button id="stopBtn" class="btn btn-stop" onclick="detenerGPS()">DETENER TRANSMISIÓN</button>
+    <p id="statusMsg" style="margin-top:20px; font-size: 14px;"></p>
 </div>
 
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyDGBkCnWppaprzs2gUkTj16nk6WOiLn5yQ",
-        databaseURL: "https://bus-tracker-managua-default-rtdb.firebaseio.com"
-    };
-
+    const firebaseConfig = { apiKey: "AIzaSyDGBkCnWppaprzs2gUkTj16nk6WOiLn5yQ", databaseURL: "https://bus-tracker-managua-default-rtdb.firebaseio.com" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let watchId = null;
-    let unidadIdGlobal = null;
-    let codigoGlobal = null;
+    let watchId = null, unidadIdGlobal = null, codigoGlobal = null;
+
+    // DETECCIÓN AUTOMÁTICA DE QR
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const idQR = urlParams.get('id');
+        if (idQR) {
+            document.getElementById('unidadCodigo').value = idQR;
+            validarCodigo();
+        }
+    };
 
     function validarCodigo() {
-        const codigo = document.getElementById('unidadCodigo').value.trim();
-        if(!codigo) return alert("Ingresa el código");
-
-        db.ref(`conductores_autorizados/${codigo}`).once('value', snap => {
-            const data = snap.val();
-            if(data && data.estado === 'activo') {
-                codigoGlobal = codigo;
-                unidadIdGlobal = data.unidad;
+        const cod = document.getElementById('unidadCodigo').value.trim();
+        db.ref(`conductores_autorizados/${cod}`).once('value', snap => {
+            const d = snap.val();
+            if(d && d.estado === 'activo') {
+                codigoGlobal = cod; unidadIdGlobal = d.unidad;
                 document.getElementById('step1').style.display = 'none';
                 document.getElementById('extraInfo').style.display = 'block';
-                document.getElementById('labelUnidad').innerText = "Unidad #" + data.unidad;
-                document.getElementById('labelEmpresa').innerText = data.empresa_nombre;
-                mostrarEstado('active', '✅ CÓDIGO VALIDADO');
-            } else {
-                alert("Código no encontrado o bloqueado.");
-            }
+                document.getElementById('labelUnidad').innerText = "UNIDAD #" + d.unidad + " - " + d.empresa_nombre;
+            } else { alert("Código inválido o bloqueado."); }
         });
     }
 
     function iniciarGPS() {
         const tel = document.getElementById('telConductor').value;
-        const ruta = document.getElementById('rutaNombre').value;
-        if(!tel || !ruta) return alert("Completa los datos.");
+        const rut = document.getElementById('rutaNombre').value;
+        if(!tel || !rut) return alert("Faltan datos");
 
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(() => {
                 document.getElementById('extraInfo').style.display = 'none';
                 document.getElementById('stopBtn').style.display = 'block';
-                mostrarEstado('active', '🛰️ TRANSMITIENDO EN VIVO');
-
-                db.ref(`conductores_autorizados/${codigoGlobal}`).update({
-                    telefono: tel,
-                    ruta_actual: ruta,
-                    ultima_conexion: Date.now()
-                });
-
-                watchId = navigator.geolocation.watchPosition(enviarPosicion, errorGPS, {
-                    enableHighAccuracy: true,
-                    maximumAge: 0,
-                    timeout: 5000
-                });
-            }, () => alert("Debes activar el GPS."));
+                document.getElementById('statusMsg').innerHTML = "🛰️ <span style='color:#00ff88'>TRANSMITIENDO POSICIÓN GPS</span>";
+                
+                watchId = navigator.geolocation.watchPosition(pos => {
+                    db.ref(`buses/${unidadIdGlobal}`).update({
+                        lat: pos.coords.latitude, lng: pos.coords.longitude,
+                        ruta: rut, telefono: tel, estado: 'activo', ultima_actualizacion: Date.now()
+                    });
+                }, null, { enableHighAccuracy: true });
+            }, () => alert("Por favor active el GPS de su celular."));
         }
-    }
-
-    function enviarPosicion(pos) {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        db.ref(`buses/${unidadIdGlobal}`).update({
-            lat: lat, lng: lng,
-            ruta: document.getElementById('rutaNombre').value,
-            telefono: document.getElementById('telConductor').value,
-            ultima_actualizacion: Date.now(),
-            estado: 'activo'
-        });
-        document.getElementById('geoInfo').innerHTML = `Posición: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-    }
-
-    function errorGPS(err) {
-        mostrarEstado('inactive', '⚠️ ERROR DE SEÑAL GPS');
     }
 
     function detenerGPS() {
-        if(watchId) {
-            navigator.geolocation.clearWatch(watchId);
-            db.ref(`buses/${unidadIdGlobal}`).update({ estado: 'inactivo' });
-            location.reload();
-        }
+        if(watchId) navigator.geolocation.clearWatch(watchId);
+        db.ref(`buses/${unidadIdGlobal}`).update({ estado: 'inactivo' });
+        location.reload();
     }
-
-    function mostrarEstado(clase, msg) {
-        const box = document.getElementById('statusBox');
-        box.className = 'status ' + clase;
-        box.innerHTML = msg;
-        box.style.display = 'block';
-    }
-
-    window.addEventListener('beforeunload', () => {
-        if(unidadIdGlobal) db.ref(`buses/${unidadIdGlobal}`).update({ estado: 'desconectado' });
-    });
 </script>
 </body>
 </html>
