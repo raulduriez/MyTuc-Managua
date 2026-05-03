@@ -17,7 +17,6 @@
         header { background: var(--card); padding: 10px 25px; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; z-index: 1001; }
         header h1 { color: var(--accent); font-size: 1.1rem; margin: 0; }
 
-        /* Ajuste de Altura: Mapa más alto, tabla más baja */
         .main-layout { display: grid; grid-template-columns: 1fr 220px; grid-template-rows: 1fr 180px; flex: 1; overflow: hidden; }
         #map { grid-column: 1; grid-row: 1; width: 100%; border-bottom: 2px solid #30363d; }
         
@@ -28,7 +27,6 @@
         .op-table th, .op-table td { border: 1px solid #ccc; padding: 4px; text-align: center; }
         .head-title { color: #1a73e8; font-weight: bold; background: #f0f0f0; position: sticky; top: 0; }
 
-        /* Cuadro de Leyenda */
         .legend-box { background: rgba(0,0,0,0.3); border: 1px solid #333; border-radius: 6px; padding: 8px; font-size: 0.65rem; }
         .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
         .dot { width: 8px; height: 8px; border-radius: 50%; }
@@ -79,7 +77,6 @@
             <p id="countBuses">0</p>
         </div>
 
-        <!-- Cuadro de Simbología -->
         <div class="legend-box">
             <h5 style="color:var(--accent); margin-top:0;">SIMBOLOGÍA</h5>
             <div class="legend-item"><div class="dot" style="background:#00ff88;"></div> IDA (Marcación)</div>
@@ -145,14 +142,12 @@
         "76": {lat: 12.1688275, lng: -86.3426136, prog: 60}
     };
 
-    // Dibujar puntos en mapa[cite: 1]
     for(let p in PARADAS) {
         L.circleMarker([PARADAS[p].lat, PARADAS[p].lng], {
             radius: 5, color: p <= "48" ? '#00ff88' : '#ffcc00', fillOpacity: 0.8
         }).addTo(map);
     }
 
-    // Audio de alerta (Beep)
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function sonarAlerta() {
         const osc = audioCtx.createOscillator();
@@ -188,17 +183,21 @@
         const ahora = Date.now();
         grid.innerHTML = "";
 
-        if(!data) return;
+        if(!data) {
+            document.getElementById('countBuses').innerText = "0";
+            return;
+        }
+
+        // Cambio aquí: Filtro de 5 minutos (300000 ms) para mayor estabilidad
         let activos = Object.keys(data).map(id => ({id, ...data[id]}))
-            .filter(b => (ahora - b.ultima_actualizacion) < 120000);
+            .filter(b => (ahora - (b.ultima_actualizacion || b.timestamp)) < 300000);
 
         document.getElementById('countBuses').innerText = activos.length;
 
-        activos.forEach((bus, i) => {
-            const num = bus.id.split('-')[1] || bus.id;
-            const horaIniRaw = bus.ultima_actualizacion;
+        activos.forEach((bus) => {
+            const num = bus.unidad || bus.id.split('-')[1] || bus.id;
+            const horaBase = bus.ultima_actualizacion || bus.timestamp;
             
-            // Lógica de detección de bus detenido[cite: 1]
             if(!historialPos[bus.id]) historialPos[bus.id] = {lat: bus.lat, lng: bus.lng, t: ahora};
             if(getDist(bus.lat, bus.lng, historialPos[bus.id].lat, historialPos[bus.id].lng) > 8) {
                 historialPos[bus.id] = {lat: bus.lat, lng: bus.lng, t: ahora};
@@ -217,7 +216,7 @@
                 let valor = marcacionesCerradas[bus.id]?.[p] || '-';
                 let clase = "";
                 if(valor !== '-') {
-                    let minTrans = Math.floor((ahora - horaIniRaw) / 60000);
+                    let minTrans = Math.floor((ahora - horaBase) / 60000);
                     if(minTrans < PARADAS[p].prog - 3) clase = "adelantado";
                     else if(minTrans > PARADAS[p].prog + 7) clase = "retrasado";
                     else clase = "puntual";
