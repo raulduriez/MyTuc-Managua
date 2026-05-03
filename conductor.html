@@ -225,11 +225,11 @@
                         const lng = pos.coords.longitude;
                         document.getElementById('coordsText').innerText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
 
-                        // Actualizar Firebase
+                        // Actualizar Firebase - Usando ultima_actualizacion para vincular con la empresa
                         db.ref(`buses/${id}`).set({
                             lat: lat,
                             lng: lng,
-                            timestamp: Date.now(),
+                            ultima_actualizacion: Date.now(),
                             unidad: id
                         });
                     }, null, { enableHighAccuracy: true });
